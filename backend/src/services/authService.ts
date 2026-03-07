@@ -54,7 +54,7 @@ export async function comparePassword(
  */
 export function generateAccessToken(payload: JWTPayload): string {
     const token = jwt.sign(payload, JWT_CONFIG.SECRET, {
-        expiresIn: JWT_CONFIG.EXPIRES_IN,
+        expiresIn: JWT_CONFIG.EXPIRES_IN as string,
     });
     
     logger.debug('Access token generated', { userId: payload.userId });
@@ -66,7 +66,7 @@ export function generateAccessToken(payload: JWTPayload): string {
  */
 export function generateRefreshToken(payload: JWTPayload): string {
     const token = jwt.sign(payload, JWT_CONFIG.REFRESH_SECRET, {
-        expiresIn: JWT_CONFIG.REFRESH_EXPIRES_IN,
+        expiresIn: JWT_CONFIG.REFRESH_EXPIRES_IN as string,
     });
     
     logger.debug('Refresh token generated', { userId: payload.userId });
