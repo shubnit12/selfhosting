@@ -40,11 +40,11 @@ function Dashboard() {
             setRootFiles(rootFilesOnly);  // ← Store in state
             console.log('Root files:', rootFilesOnly);
             // Create virtual folder object for root
-            const virtualRootFolder = {
-                id: null,
-                name: 'Root',
-                files: rootFilesOnly
-            };
+            // const virtualRootFolder = {
+            //     id: null,
+            //     name: 'Root',
+            //     files: rootFilesOnly
+            // };
 
             // You'll need to store this temporarily
         } catch (error) {
