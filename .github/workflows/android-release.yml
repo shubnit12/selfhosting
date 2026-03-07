@@ -27,7 +27,6 @@ jobs:
           cd backend
           npm install
           npm run build
-          npm prune --production
           cd ..
 
       - name: Build Frontend
@@ -45,9 +44,8 @@ jobs:
           
           # Copy backend
           cp -r backend/dist release/backend/
-          cp -r backend/node_modules release/backend/
           cp backend/package.json release/backend/
-          cp backend/.env.example release/backend/
+          cp backend/.env release/backend/
           
           # Copy frontend
           cp -r frontend/dist release/frontend/
