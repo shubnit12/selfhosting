@@ -42,8 +42,8 @@ export const RATE_LIMITS = {
 
 export const JWT_CONFIG = {
 // JWT Secrets
-    SECRET: process.env.JWT_SECRET || 'fallback_secret_change_in_production',
-    REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'fallback_refresh_secret_change_in_production',
+    SECRET: (process.env.JWT_SECRET || 'fallback_secret_change_in_production') as string,
+    REFRESH_SECRET: (process.env.JWT_REFRESH_SECRET || 'fallback_refresh_secret_change_in_production') as string,
     
     // Token Expiry
     EXPIRES_IN: process.env.JWT_EXPIRES_IN || '15m',  // 15 minutes
