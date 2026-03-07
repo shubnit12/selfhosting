@@ -1,0 +1,40 @@
+# Environment variables
+# backend/.env
+# *.env.local
+# *.env.*.local
+
+# Dependencies
+node_modules/
+
+# Logs
+backend/logs/
+*.log
+
+# Storage and uploads
+backend/storage
+backend/backups/
+
+# Large media files
+backend/bigsize.mov
+backend/smolsize.mov
+*.okso
+
+# OS files
+.DS_Store
+.DS_Store?
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Database
+backend/data/

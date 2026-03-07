@@ -1,0 +1,89 @@
+name: Android Release Build
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers on version tags like v1.0.0
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Build Backend
+        run: |
+          cd backend
+          npm ci
+          npm run build
+          npm prune --production
+          cd ..
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+          cd ..
+
+      - name: Create deployment package
+        run: |
+          mkdir -p release/backend
+          mkdir -p release/frontend
+          mkdir -p release/deploy
+          
+          # Copy backend
+          cp -r backend/dist release/backend/
+          cp -r backend/node_modules release/backend/
+          cp backend/package.json release/backend/
+          cp backend/.env.example release/backend/
+          
+          # Copy frontend
+          cp -r frontend/dist release/frontend/
+          
+          # Copy deployment scripts
+          cp -r deploy/* release/deploy/
+          chmod +x release/deploy/*.sh
+          
+          # Copy root files
+          cp README.md release/
+          cp .gitignore release/
+          
+          # Create archive
+          cd release
+          tar -czf ../selfhosting-android-${{ github.ref_name }}.tar.gz .
+          cd ..
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: selfhosting-android-${{ github.ref_name }}.tar.gz
+          body: |
+            ## Self-Hosted File Server - Android Release ${{ github.ref_name }}
+            
+            ### What's Included
+            - Backend (compiled JavaScript + production dependencies)
+            - Frontend (optimized static files)
+            - Deployment scripts for Android/Termux
+            
+            ### Installation
+            See `ANDROID-DEPLOYMENT.md` for complete setup guide.
+            
+            ### Size
+            - Compressed: ~15-20MB
+            - Extracted: ~25MB (excluding Node.js/Redis)
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
