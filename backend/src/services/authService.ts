@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import { BCRYPT_CONFIG, JWT_CONFIG } from '../config/constants';
 import { tokenBlacklist } from '../config/redis';
 import logger from '../utils/logger';
