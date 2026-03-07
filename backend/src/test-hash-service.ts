@@ -21,7 +21,7 @@ async function testHashService() {
         // Test 2: Buffer hash
         console.log('Test 2: Buffer hash');
         const buffer = Buffer.from('Test data');
-        const bufferHash = calculateBufferHash(buffer);
+        const bufferHash = await calculateBufferHash(buffer);
         console.log('Hash:', bufferHash.substring(0, 32) + '...');
         console.log();
 
