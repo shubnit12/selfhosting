@@ -6,17 +6,18 @@ echo "🚀 Setting up Self-Hosted File Server on Android..."
 # 1. Install dependencies
 echo "📦 Installing dependencies..."
 pkg update -y
-# pkg install -y nodejs postgresql redis
-pkg install -y nodejs redis
+pkg install -y nodejs postgresql redis
+# pkg install -y nodejs redis
 
 # # 2. Initialize PostgreSQL
-# echo "🗄️ Initializing PostgreSQL..."
-# initdb $PREFIX/var/lib/postgresql
-# pg_ctl -D $PREFIX/var/lib/postgresql start
+echo "🗄️ Initializing PostgreSQL..."
+initdb $PREFIX/var/lib/postgresql
+pg_ctl -D $PREFIX/var/lib/postgresql start
+sleep 2
 
 # # 3. Create database
-# echo "📊 Creating database..."
-# createdb selfhosting_db
+echo "📊 Creating database..."
+createdb selfhosting_db
 
 # SQLite is included with Node.js - no separate install needed
 echo "✅ SQLite will be used (included with Node.js)"
