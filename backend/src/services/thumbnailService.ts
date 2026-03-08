@@ -1,4 +1,3 @@
-import sharp from 'sharp';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
@@ -27,13 +26,15 @@ export async function generateImageThumbnail(
     outputPath: string
 ): Promise<string> {
     try {
-        await sharp(inputPath)
-            .resize(200, 200, {
-                fit: 'inside',
-                withoutEnlargement: true
-            })
-            .jpeg({ quality: 80 })
-            .toFile(outputPath);
+        // await sharp(inputPath)
+        //     .resize(200, 200, {
+        //         fit: 'inside',
+        //         withoutEnlargement: true
+        //     })
+        //     .jpeg({ quality: 80 })
+        //     .toFile(outputPath);
+        const command = `ffmpeg -i "${inputPath}" -vf "scale=200:200:force_original_aspect_ratio=decrease" "${outputPath}" -y`;
+        await execAsync(command);
 
         logger.info('Image thumbnail generated', {
             inputPath,
