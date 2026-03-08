@@ -4,8 +4,8 @@
 echo "🚀 Starting Self-Hosted File Server..."
 
 # Start PostgreSQL
-# echo "Starting PostgreSQL..."
-# pg_ctl -D $PREFIX/var/lib/postgresql start
+echo "Starting PostgreSQL..."
+pg_ctl -D $PREFIX/var/lib/postgresql start
 
 # Start Redis
 echo "Starting Redis..."
