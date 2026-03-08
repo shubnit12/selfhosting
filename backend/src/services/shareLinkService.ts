@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { SharedLink, File } from '../models';
 import { BCRYPT_CONFIG } from '../config/constants';
 import logger from '../utils/logger';
