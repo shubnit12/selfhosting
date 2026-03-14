@@ -9,7 +9,7 @@ async function setupDatabase() {
     const client = new Client({
         host: process.env.DB_HOST || '127.0.0.1',
         port: parseInt(process.env.DB_PORT || '5432'),
-        user: process.env.USER || 'postgres', // Your macOS username
+        user: process.env.DB_USER || 'postgres', // Your macOS username
         password: '', // Usually no password for local superuser
         database: 'postgres'
     });
@@ -56,7 +56,7 @@ async function setupDatabase() {
         const dbClient = new Client({
             host: process.env.DB_HOST || '127.0.0.1',
             port: parseInt(process.env.DB_PORT || '5432'),
-            user: process.env.USER || 'postgres',
+            user: process.env.DB_USER || 'postgres',
             password: '',
             database: process.env.DB_NAME
         });
