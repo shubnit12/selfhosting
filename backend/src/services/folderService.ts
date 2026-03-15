@@ -1,7 +1,11 @@
-import { Folder, File } from '../models';
+import fs from 'fs';
+import path from 'path';
+import { Folder, File, FileReference } from '../models';
 import { Op } from 'sequelize';
 import logger from '../utils/logger';
 import { AppError } from '../middleware/errorHandler';
+import { deleteFile, getFilePath } from './storageService';
+import { subtractFromStorageUsed } from './quotaService';
 
 
 // ========================================
@@ -329,6 +333,116 @@ export async function deleteFolder(
 
     } catch (error) {
         logger.error('Failed to delete folder', {
+            error: (error as Error).message,
+            folderId,
+            userId
+        });
+        throw error;
+    }
+}
+
+// ========================================
+// PERMANENT DELETE FOLDER
+// ========================================
+
+/**
+ * Permanently delete a folder and all its contents from DB and disk
+ * Only works on folders that are already soft-deleted (in trash)
+ * 
+ * @param folderId - Folder ID
+ * @param userId - User ID (for authorization)
+ */
+export async function permanentDeleteFolder(
+    folderId: string,
+    userId: string
+): Promise<void> {
+    try {
+        const folder = await Folder.findByPk(folderId);
+
+        if (!folder) {
+            throw new AppError('Folder not found', 404);
+        }
+
+        if (folder.user_id !== userId) {
+            throw new AppError('Unauthorized', 403);
+        }
+
+        if (!folder.is_deleted) {
+            throw new AppError('Folder must be in trash before permanently deleting', 400);
+        }
+
+        // Collect all folder IDs (this folder + all subfolders)
+        const allFolders = await Folder.findAll({
+            where: {
+                user_id: userId,
+                [Op.or]: [
+                    { id: folderId },
+                    { path: { [Op.like]: `${folder.path}/%` } }
+                ]
+            },
+            attributes: ['id']
+        });
+
+        const folderIds = allFolders.map(f => f.id);
+
+        // Find all files in these folders
+        const files = await File.findAll({
+            where: {
+                user_id: userId,
+                folder_id: { [Op.in]: folderIds }
+            }
+        });
+
+        // Permanently delete each file
+        for (const file of files) {
+            try {
+                const ref = await FileReference.findOne({
+                    where: { file_hash: file.file_hash }
+                });
+
+                if (ref) {
+                    if (ref.reference_count <= 1) {
+                        const filePath = getFilePath(ref.file_hash, path.extname(ref.stored_path));
+                        if (fs.existsSync(filePath)) {
+                            await deleteFile(filePath);
+                        }
+                        await ref.destroy();
+                    } else {
+                        await ref.update({ reference_count: ref.reference_count - 1 });
+                    }
+                }
+
+                await subtractFromStorageUsed(userId, Number(file.size));
+                await file.destroy();
+            } catch (error) {
+                logger.error('Failed to permanently delete file during folder deletion', {
+                    error: (error as Error).message,
+                    fileId: file.id
+                });
+            }
+        }
+
+        // Hard delete all folders
+        await Folder.destroy({
+            where: {
+                user_id: userId,
+                [Op.or]: [
+                    { id: folderId },
+                    { path: { [Op.like]: `${folder.path}/%` } }
+                ]
+            }
+        });
+
+        logger.info('Folder permanently deleted', {
+            folderId,
+            userId,
+            folderName: folder.name,
+            filesDeleted: files.length,
+            foldersDeleted: folderIds.length
+        });
+
+    } catch (error) {
+        logger.error('Failed to permanently delete folder', {
             error: (error as Error).message,
             folderId,
             userId
