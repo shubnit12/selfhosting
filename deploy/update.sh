@@ -1,19 +1,18 @@
 #!/bin/bash
 REPO="shubnit12/selfhosting"
 INSTALL_DIR="$HOME/selfhostin"
+PARENT_DIR="$HOME"
 VERSION_FILE="$INSTALL_DIR/current_version.txt"
 
-# Check if this is a fresh phone (dependencies not installed)
-if ! command -v node &> /dev/null || ! command -v nginx &> /dev/null; then
-    echo "❌ Dependencies not installed. Please run android-setup.sh first."
-    exit 1
+# Step 1: Copy self to parent dir so we survive rm -rf on INSTALL_DIR
+SCRIPT_REAL=$(realpath "$0" 2>/dev/null || echo "$0")
+RUNNER="$PARENT_DIR/selfhosting-update-runner.sh"
+if [ "$SCRIPT_REAL" != "$RUNNER" ]; then
+    cp "$SCRIPT_REAL" "$RUNNER"
+    exec bash "$RUNNER"
 fi
 
-if [ ! -d "$INSTALL_DIR" ]; then
-    echo "❌ No existing installation found. Please run android-setup.sh first."
-    exit 1
-fi
-
+# Step 2: Check for update
 echo "🔍 Checking for updates..."
 LATEST=$(curl -s https://api.github.com/repos/$REPO/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
 
@@ -32,31 +31,29 @@ fi
 
 echo "🚀 Updating $CURRENT → $LATEST..."
 
+# Step 3: Download new release
 curl -L -o /tmp/selfhosting-update.tar.gz \
     "https://github.com/$REPO/releases/download/$LATEST/selfhosting-android-$LATEST.tar.gz"
 
+# Step 4: Stop all services
 pkill -f "node dist/server.js" || true
 pkill nginx || true
 pkill autossh || true
 sleep 2
 
-rm -rf /tmp/selfhosting-new
-mkdir -p /tmp/selfhosting-new
-tar -xzf /tmp/selfhosting-update.tar.gz -C /tmp/selfhosting-new
-
-cd /tmp/selfhosting-new/backend
-npm install --production
-npm run sync-db
-
-sed "s|FRONTEND_DIST_PATH|$INSTALL_DIR/frontend/dist|g" \
-    /tmp/selfhosting-new/deploy/nginx.conf > $PREFIX/etc/nginx/nginx.conf
-
+# Step 5: Replace install directory
 rm -rf "$INSTALL_DIR"
-mv /tmp/selfhosting-new "$INSTALL_DIR"
+mkdir -p "$INSTALL_DIR"
+tar -xzf /tmp/selfhosting-update.tar.gz -C "$INSTALL_DIR"
 
+# Step 6: Save version
 echo "$LATEST" > "$INSTALL_DIR/current_version.txt"
 
+# Step 7: Run setup (idempotent - skips initdb/createdb if already done)
 cd "$INSTALL_DIR"
+bash deploy/android-setup.sh
+
+# Step 8: Start server
 bash deploy/start-server.sh
 
 echo "✅ Updated to $LATEST!"
