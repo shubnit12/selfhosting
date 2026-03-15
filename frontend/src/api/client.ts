@@ -182,6 +182,10 @@ export const folderAPI = {
 async makePrivate(folderId: string) {
     const response = await apiClient.delete(`/folders/${folderId}/public`);
     return response.data;
+},
+async permanentDelete(folderId: string) {
+    const response = await apiClient.delete(`/folders/${folderId}/permanent`);
+    return response.data;
 }
 }
 
