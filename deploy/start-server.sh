@@ -9,7 +9,7 @@ pg_ctl -D $PREFIX/var/lib/postgresql start
 
 # Start Redis
 echo "Starting Redis..."
-redis-server --daemonize yes
+redis-server --daemonize yes --stop-writes-on-bgsave-error no
 
 # Wait for services
 sleep 2
