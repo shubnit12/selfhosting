@@ -7,7 +7,8 @@ import {
     deleteFolder,
     restoreFolder,
     getTrashedFolders,
-    getFolderTree
+    getFolderTree,
+    permanentDeleteFolder
 } from '../services/folderService';
 import { AppError } from '../middleware/errorHandler';
 import logger from '../utils/logger';
@@ -225,6 +226,45 @@ export async function deleteFolderHandler(req: Request, res: Response): Promise<
 
     } catch (error) {
         logger.error('Failed to delete folder', {
+            error: (error as Error).message,
+            userId: req.user?.userId
+        });
+        throw error;
+    }
+}
+
+// ========================================
+// PERMANENT DELETE FOLDER
+// ========================================
+
+/**
+ * DELETE /api/v1/folders/:id/permanent
+ * Permanently delete folder and all contents (only from trash)
+ */
+export async function permanentDeleteFolderHandler(req: Request, res: Response): Promise<void> {
+    try {
+        if (!req.user) {
+            throw new AppError('Authentication required', 401);
+        }
+
+        const id = req.params.id as string;
+
+        await permanentDeleteFolder(id, req.user.userId);
+
+        await ActivityLog.log(ActivityAction.DELETE_FOLDER, {
+            userId: req.user.userId,
+            folderId: id,
+            ipAddress: req.ip || 'unknown',
+            userAgent: req.headers['user-agent'],
+            details: { permanent: true }
+        });
+
+        res.json({
+            message: 'Folder permanently deleted'
+        });
+
+    } catch (error) {
+        logger.error('Failed to permanently delete folder', {
             error: (error as Error).message,
             userId: req.user?.userId
         });
