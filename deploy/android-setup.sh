@@ -1,5 +1,6 @@
 #!/bin/bash
 # First-time setup script for Android/Termux
+DEPLOY_ROOT=$(pwd)
 
 echo "🚀 Setting up Self-Hosted File Server on Android..."
 
@@ -44,7 +45,6 @@ mkdir -p storage/files storage/temp storage/thumbnails
 
 # 8. Setup Nginx config
 echo "🌐 Setting up Nginx..."
-DEPLOY_ROOT=$(pwd)
 sed "s|FRONTEND_DIST_PATH|$DEPLOY_ROOT/frontend/dist|g" deploy/nginx.conf > $PREFIX/etc/nginx/nginx.conf
 echo "✅ Nginx configured"
 
