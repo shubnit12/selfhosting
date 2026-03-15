@@ -88,6 +88,17 @@ const handleRestoreFolder = async (folderId: string, folderName: string) => {
         console.error('Restore folder failed:', error);
     }
 };
+const handlePermanentDeleteFolder = async (folderId: string, folderName: string) => {
+    if (!confirm(`Permanently delete folder "${folderName}" and all its contents? This cannot be undone!`)) return;
+
+    try {
+        await folderAPI.permanentDelete(folderId);
+        console.log('Folder permanently deleted:', folderName);
+        await fetchTrash();
+    } catch (error) {
+        console.error('Permanent delete folder failed:', error);
+    }
+};
 const handlePermanentDelete = async (fileId: string, filename: string) => {
     if (!confirm(`Permanently delete ${filename}? This cannot be undone!`)) return;
 
@@ -159,7 +170,10 @@ const handlePermanentDelete = async (fileId: string, filename: string) => {
             <button onClick={() => handleRestoreFolder(folder.id, folder.name)}>
                 Restore
             </button>
-            
+            {' '}
+            <button onClick={() => handlePermanentDeleteFolder(folder.id, folder.name)}>
+                Delete Forever
+            </button>
                         </li>
                     ))}
                 </ul>
