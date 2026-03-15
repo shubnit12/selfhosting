@@ -32,7 +32,7 @@ fi
 echo "🚀 Updating $CURRENT → $LATEST..."
 
 # Step 3: Download new release
-curl -L -o /tmp/selfhosting-update.tar.gz \
+curl -L -o "$TMPDIR/selfhosting-update.tar.gz" \
     "https://github.com/$REPO/releases/download/$LATEST/selfhosting-android-$LATEST.tar.gz"
 
 # Step 4: Stop all services
@@ -44,7 +44,7 @@ sleep 2
 # Step 5: Replace install directory
 rm -rf "$INSTALL_DIR"
 mkdir -p "$INSTALL_DIR"
-tar -xzf /tmp/selfhosting-update.tar.gz -C "$INSTALL_DIR"
+tar -xzf "$TMPDIR/selfhosting-update.tar.gz" -C "$INSTALL_DIR"
 
 # Step 6: Save version
 echo "$LATEST" > "$INSTALL_DIR/current_version.txt"
