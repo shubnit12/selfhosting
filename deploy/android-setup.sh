@@ -6,7 +6,7 @@ echo "🚀 Setting up Self-Hosted File Server on Android..."
 # 1. Install dependencies
 echo "📦 Installing dependencies..."
 pkg update -y
-pkg install -y nodejs postgresql redis
+pkg install -y nodejs postgresql redis ffmpeg nginx
 # pkg install -y nodejs redis
 
 # # 2. Initialize PostgreSQL
@@ -41,6 +41,12 @@ npm run sync-db
 # 7. Create storage directories
 echo "📁 Creating storage directories..."
 mkdir -p storage/files storage/temp storage/thumbnails
+
+# 8. Setup Nginx config
+echo "🌐 Setting up Nginx..."
+DEPLOY_ROOT=$(pwd)
+sed "s|FRONTEND_DIST_PATH|$DEPLOY_ROOT/frontend/dist|g" deploy/nginx.conf > $PREFIX/etc/nginx/nginx.conf
+echo "✅ Nginx configured"
 
 echo "✅ Setup complete!"
 echo ""
