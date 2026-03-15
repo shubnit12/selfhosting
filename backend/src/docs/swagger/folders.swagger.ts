@@ -1429,6 +1429,156 @@ tree.forEach(rootFolder => renderFolder(rootFolder));
             }
         }
     },
+    '/folders/{id}/permanent': {
+        delete: {
+            tags: ['Folders'],
+            summary: 'Permanently delete folder',
+            description: `
+**Permanently delete a folder and ALL its contents from the system. This action is irreversible.**
+
+**⚠️ WARNING: This cannot be undone. All files and subfolders will be permanently lost.**
+
+**Prerequisites:**
+- Folder must already be in trash (soft-deleted)
+- Use \`DELETE /folders/{id}\` first to move folder to trash
+- Then use this endpoint to permanently destroy it
+
+**How it works:**
+1. Verifies folder exists and belongs to authenticated user
+2. Checks folder is in trash (\`is_deleted=true\`) — returns 400 if not
+3. Collects all subfolder IDs (using path LIKE matching)
+4. Finds all File records across the folder and every subfolder
+5. For each file:
+   - Looks up FileReference (deduplication record)
+   - If \`reference_count = 1\`: deletes physical file from disk + destroys FileReference
+   - If \`reference_count > 1\`: decrements reference count only (other users still have the file)
+   - Subtracts file size from user's storage quota
+   - Hard deletes the File DB record (SharedLinks auto-cascade deleted)
+6. Hard deletes all Folder DB records (this folder + all subfolders)
+7. Logs DELETE_FOLDER activity with \`permanent: true\`
+
+**Cascade deletion:**
+- All subfolders permanently deleted
+- All files in all subfolders permanently deleted
+- All shared links for deleted files automatically removed (DB cascade)
+- User storage quota freed
+
+**Deduplication handling:**
+- Files are deduplicated — multiple users may share the same physical file
+- Physical file on disk is only deleted when the last reference is removed
+- Each user's File record is deleted independently
+- Other users' copies of deduplicated files are unaffected
+
+**Storage quota:**
+- Each deleted file's size is subtracted from the user's storage usage
+- Quota freed immediately upon permanent deletion
+
+**Use cases:**
+- Free up storage space immediately without waiting 30 days
+- Clean up sensitive data permanently
+- Bulk remove large folder structures
+
+**Comparison with soft delete:**
+| Action | DB record | Physical file | Restorable | Storage freed |
+|---|---|---|---|---|
+| Soft delete (\`DELETE /folders/{id}\`) | Marked deleted | Kept | Yes (30 days) | No |
+| Permanent delete (\`DELETE /folders/{id}/permanent\`) | Destroyed | Deleted if last ref | No | Yes |
+
+**Frontend implementation:**
+\`\`\`javascript
+// Step 1: Move to trash (soft delete)
+await fetch('/api/v1/folders/folder-uuid', { method: 'DELETE' });
+
+// Step 2: Permanently destroy (from trash view)
+const confirmed = confirm('Delete forever? This cannot be undone!');
+if (confirmed) {
+    await fetch('/api/v1/folders/folder-uuid/permanent', { method: 'DELETE' });
+}
+\`\`\`
+            `,
+            security: [{ bearerAuth: [] }],
+            parameters: [
+                {
+                    name: 'id',
+                    in: 'path',
+                    required: true,
+                    schema: {
+                        type: 'string',
+                        format: 'uuid'
+                    },
+                    example: 'da24e03c-4a84-406b-aa47-d1023403a7da',
+                    description: 'Folder ID (must be in trash)'
+                }
+            ],
+            responses: {
+                200: {
+                    description: 'Folder permanently deleted',
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['message'],
+                                properties: {
+                                    message: {
+                                        type: 'string',
+                                        example: 'Folder permanently deleted'
+                                    }
+                                }
+                            },
+                            example: {
+                                message: 'Folder permanently deleted'
+                            }
+                        }
+                    }
+                },
+                400: {
+                    description: 'Folder is not in trash',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/Error' },
+                            example: {
+                                error: 'Folder must be in trash before permanently deleting',
+                                message: 'Folder must be in trash before permanently deleting'
+                            }
+                        }
+                    }
+                },
+                401: {
+                    description: 'Not authenticated',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/Error' }
+                        }
+                    }
+                },
+                403: {
+                    description: 'Unauthorized — folder belongs to another user',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/Error' },
+                            example: {
+                                error: 'Unauthorized',
+                                message: 'Unauthorized'
+                            }
+                        }
+                    }
+                },
+                404: {
+                    description: 'Folder not found',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/Error' },
+                            example: {
+                                error: 'Folder not found',
+                                message: 'Folder not found'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+
     '/folders/{id}/public': {
     put: {
         tags: ['Folders'],
