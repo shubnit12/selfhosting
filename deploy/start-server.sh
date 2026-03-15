@@ -18,6 +18,17 @@ sleep 2
 echo "Starting Nginx..."
 nginx
 
+# Start autossh reverse tunnel to EC2
+echo "Starting EC2 reverse tunnel..."
+autossh -M 0 -N -f \
+  -o "ServerAliveInterval 30" \
+  -o "ServerAliveCountMax 3" \
+  -o "StrictHostKeyChecking no" \
+  -R 8080:localhost:8080 \
+  -i ~/.ssh/ec2_tunnel_key \
+  ubuntu@65.2.3.170
+echo "✅ Tunnel started"
+
 # Start backend
 echo "Starting backend..."
 cd backend
