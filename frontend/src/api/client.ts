@@ -2,8 +2,7 @@ import axios from "axios";
 import type { LoginResponse, TwoFactorRequiredResponse } from "../types";
 
 // const API_BASE_URL = 'http://192.168.1.56:3000/api/v1';
-const API_BASE_URL = 'http://localhost:3000/api/v1';
-
+const API_BASE_URL = '/api/v1';
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
