@@ -9,7 +9,8 @@ import {
     getTrashedFoldersHandler,
     getFolderTreeHandler,
     makePublic,
-    makePrivate
+    makePrivate,
+    permanentDeleteFolderHandler
 } from '../../../controllers/folderController';
 
 import { authenticateToken } from '../../../middleware/auth';
@@ -100,6 +101,15 @@ router.delete(
 router.post(
     '/:id/restore',
     restoreFolderHandler
+);
+
+/**
+ * DELETE /api/v1/folders/:id/permanent
+ * Permanently delete folder (must be in trash)
+ */
+router.delete(
+    '/:id/permanent',
+    permanentDeleteFolderHandler
 );
 
 
