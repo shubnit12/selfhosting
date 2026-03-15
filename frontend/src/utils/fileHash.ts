@@ -40,7 +40,7 @@
 /**
  * Split file into chunks
  */
-export function splitFileIntoChunks(file: File, chunkSize: number = 100 * 1024 * 1024): Blob[] {
+export function splitFileIntoChunks(file: File, chunkSize: number = 5 * 1024 * 1024): Blob[] {
     const chunks: Blob[] = [];
     let offset = 0;
  
