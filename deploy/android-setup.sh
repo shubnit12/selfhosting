@@ -35,10 +35,10 @@ psql -d postgres -c "SELECT 1 FROM pg_roles WHERE rolname='postgres';" | grep -q
 
 
 echo "👤 Creating database user and database..."
-source ~/termuxStorage/backend/.env
-psql -d postgres -c "CREATE ROLE $DB_USER WITH LOGIN PASSWORD '$DB_PASSWORD';"
-psql -d postgres -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
-psql -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
+source .env
+psql -d postgres -c "CREATE ROLE $DB_USER WITH LOGIN PASSWORD '$DB_PASSWORD';" 2>/dev/null || true
+psql -d postgres -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null || true
+psql -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;" 2>/dev/null || true
 # 7. Initialize database schema
 echo "🔧 Setting up database schema..."
 npm run sync-db
