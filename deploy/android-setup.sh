@@ -16,12 +16,6 @@ initdb $PREFIX/var/lib/postgresql
 pg_ctl -D $PREFIX/var/lib/postgresql start
 sleep 2
 
-# # 3. Create database
-echo "📊 Creating database..."
-createdb selfhosting_db
-
-# SQLite is included with Node.js - no separate install needed
-echo "✅ SQLite will be used (included with Node.js)"
 
 # 4. Install backend dependencies
 echo "📥 Installing backend dependencies..."
@@ -34,16 +28,26 @@ if [ ! -f .env ]; then
     cp .env.example .env
     echo "⚠️  Please edit backend/.env with your configuration"
 fi
+# 6. Create postgres superuser (skip if already exists) and  Create DB user and database
+echo "🔑 Creating postgres superuser..."
+psql -d postgres -c "SELECT 1 FROM pg_roles WHERE rolname='postgres';" | grep -q 1 || \
+    createuser --superuser postgres 2>/dev/null || true
 
-# 6. Initialize database schema
+
+echo "👤 Creating database user and database..."
+source ~/termuxStorage/backend/.env
+psql -d postgres -c "CREATE ROLE $DB_USER WITH LOGIN PASSWORD '$DB_PASSWORD';"
+psql -d postgres -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
+psql -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
+# 7. Initialize database schema
 echo "🔧 Setting up database schema..."
 npm run sync-db
 
-# 7. Create storage directories
+# 8. Create storage directories
 echo "📁 Creating storage directories..."
 mkdir -p storage/files storage/temp storage/thumbnails
 
-# 8. Setup Nginx config
+# 9. Setup Nginx config
 echo "🌐 Setting up Nginx..."
 sed "s|FRONTEND_DIST_PATH|$DEPLOY_ROOT/frontend/dist|g" "$DEPLOY_ROOT/deploy/nginx.conf" > $PREFIX/etc/nginx/nginx.conf
 echo "✅ Nginx configured"
