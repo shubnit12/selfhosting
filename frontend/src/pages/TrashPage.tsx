@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { fileAPI, folderAPI } from '../api/client';
 import { useNavigate } from "react-router-dom";
 import FileThumbnail from '../components/FileThumbnail';
+import './TrashPage.css';
+import './Dashboard.css';
+
 
 
 function TrashPage() {
@@ -113,73 +116,82 @@ const handlePermanentDelete = async (fileId: string, filename: string) => {
     }
 };
     return (
+    <div className="trash-page">
+        <header className="trash-header">
+            <button className="header-btn" onClick={() => navigate('/dashboard')}>← Dashboard</button>
+            <h1>🗑 Trash</h1>
+            <p>30-day retention</p>
+        </header>
 
-        <div>
-            <button onClick={() => navigate('/dashboard')}>dashboard</button>
-            <h1>Trash</h1>
-            <p>Deleted files and folders (30-day retention)</p>
+        <main className="trash-main">
 
-            <h2>Deleted Files ({trashedFiles.length})</h2>
-{trashedFiles.length === 0 ? (
-    <p>No deleted files</p>
-) : (
-    <div>
-        <div>
-            <input
-                type="checkbox"
-                checked={trashedFiles.every(f => selectedFileIds.has(f.id))}
-                onChange={toggleSelectAll}
-            />
-            <span> Select All</span>
-            {selectedFileIds.size > 0 && (
-                <>
-                    <button onClick={handleBulkRestore}>Restore ({selectedFileIds.size})</button>
-                    <button onClick={handleBulkPermanentDelete}>Delete Forever ({selectedFileIds.size})</button>
-                    <button onClick={() => setSelectedFileIds(new Set())}>Clear</button>
-                </>
-            )}
-        </div>
-        <ul>
-            {trashedFiles.map((file) => (
-                <li key={file.id}>
-                    <input
-                        type="checkbox"
-                        checked={selectedFileIds.has(file.id)}
-                        onChange={() => toggleFileSelection(file.id)}
-                    />
-                    <FileThumbnail fileId={file.id} mimeType={file.mime_type} /> {file.original_name} - {file.days_until_permanent_delete} days left
-                    {' '}
-                    <button onClick={() => handleRestoreFile(file.id, file.original_name)}>Restore</button>
-                    {' '}
-                    <button onClick={() => handlePermanentDelete(file.id, file.original_name)}>Delete Forever</button>
-                </li>
-            ))}
-        </ul>
+            <div>
+                <p className="trash-section-heading">Deleted Files ({trashedFiles.length})</p>
+                {trashedFiles.length === 0 ? (
+                    <p className="trash-empty">No deleted files</p>
+                ) : (
+                    <div>
+                        <div className="bulk-toolbar">
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={trashedFiles.every(f => selectedFileIds.has(f.id))}
+                                    onChange={toggleSelectAll}
+                                />
+                                Select All
+                            </label>
+                            {selectedFileIds.size > 0 && (
+                                <>
+                                    <button className="bulk-btn" onClick={handleBulkRestore}>Restore ({selectedFileIds.size})</button>
+                                    <button className="bulk-btn bulk-btn-danger" onClick={handleBulkPermanentDelete}>Delete Forever ({selectedFileIds.size})</button>
+                                    <button className="bulk-btn" onClick={() => setSelectedFileIds(new Set())}>Clear</button>
+                                </>
+                            )}
+                        </div>
+                        <ul className="file-list">
+                            {trashedFiles.map((file) => (
+                                <li key={file.id} className="file-row">
+                                    <input type="checkbox" checked={selectedFileIds.has(file.id)} onChange={() => toggleFileSelection(file.id)} />
+                                    <div className="file-thumb-area" style={{ cursor: 'default' }}>
+                                        <FileThumbnail fileId={file.id} mimeType={file.mime_type} fill />
+                                    </div>
+                                    <span className="file-name">{file.original_name}</span>
+                                    <span className="days-badge">{file.days_until_permanent_delete}d left</span>
+                                    <div className="file-row-actions">
+                                        <button className="file-action-btn" onClick={() => handleRestoreFile(file.id, file.original_name)}>Restore</button>
+                                        <button className="file-action-btn file-action-btn-danger" onClick={() => handlePermanentDelete(file.id, file.original_name)}>Delete Forever</button>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+            </div>
+
+            <div>
+                <p className="trash-section-heading">Deleted Folders ({trashedFolders.length})</p>
+                {trashedFolders.length === 0 ? (
+                    <p className="trash-empty">No deleted folders</p>
+                ) : (
+                    <ul className="file-list">
+                        {trashedFolders.map((folder) => (
+                            <li key={folder.id} className="file-row">
+                                <div className="file-thumb-area" style={{ cursor: 'default', fontSize: '2rem' }}>📁</div>
+                                <span className="file-name">{folder.name}</span>
+                                <span className="days-badge">{folder.days_until_permanent_delete}d left</span>
+                                <div className="file-row-actions">
+                                    <button className="file-action-btn" onClick={() => handleRestoreFolder(folder.id, folder.name)}>Restore</button>
+                                    <button className="file-action-btn file-action-btn-danger" onClick={() => handlePermanentDeleteFolder(folder.id, folder.name)}>Delete Forever</button>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+
+        </main>
     </div>
-)}
-
-            <h2>Deleted Folders ({trashedFolders.length})</h2>
-            {trashedFolders.length === 0 ? (
-                <p>No deleted folders</p>
-            ) : (
-                <ul>
-                    {trashedFolders.map((folder) => (
-                        <li key={folder.id}>
-                            📁 {folder.name} - {folder.days_until_permanent_delete} days left
-                             {' '}
-            <button onClick={() => handleRestoreFolder(folder.id, folder.name)}>
-                Restore
-            </button>
-            {' '}
-            <button onClick={() => handlePermanentDeleteFolder(folder.id, folder.name)}>
-                Delete Forever
-            </button>
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </div>
-    );
+);
 }
 
 export default TrashPage;
