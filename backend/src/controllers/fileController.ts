@@ -14,6 +14,7 @@ import ActivityLog from '../models/ActivityLog';
 import { calculateBufferHash } from '../services/hashService';
 import { createFileReference } from '../services/deduplicationService';
 import { generateStoragePath, getFilePath, ensureFileDirectory } from '../services/storageService';
+import { streamWithRange } from '../utils/streamWithRange';
 
 // ========================================
 // CHECK DUPLICATE (Pre-Upload)
@@ -757,21 +758,8 @@ export async function downloadFile(req: Request, res: Response): Promise<void> {
             filename: file.original_name
         });
 
-        // Send file with proper headers
-        res.download(filePath, file.original_name, (err) => {
-            if (err) {
-                logger.error('File download failed', {
-                    error: err.message,
-                    fileId,
-                    userId
-                });
-            } else {
-                logger.info('File download completed', {
-                    fileId: file.id,
-                    userId
-                });
-            }
-        });
+        // Stream file with Range support (enables seeking + progressive load)
+        streamWithRange(req, res, filePath, file.mime_type, file.size, file.original_name);
 
     } catch (error) {
         logger.error('Download failed', {
