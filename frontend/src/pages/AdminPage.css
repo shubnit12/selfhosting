@@ -1,0 +1,130 @@
+/* ─── Page wrapper ───────────────────────────── */
+.admin-page {
+    min-height: 100vh;
+    background-color: #f5f0e8;
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ─── Header ─────────────────────────────────── */
+.admin-header {
+    background-color: #2d2d2d;
+    color: #f5f0e8;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 3px solid #6b5c3e;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.admin-header h1 {
+    font-size: 1.1rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin: 0;
+    flex: 1;
+}
+
+/* ─── Main content ───────────────────────────── */
+.admin-main {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 1000px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* ─── User table ─────────────────────────────── */
+.admin-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    background: #fffdf7;
+    border: 2px solid #2d2d2d;
+    box-shadow: 3px 3px 0px #6b5c3e;
+}
+
+.admin-table th {
+    background: #2d2d2d;
+    color: #f5f0e8;
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 0.72rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.admin-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e0d8cc;
+    color: #2d2d2d;
+    vertical-align: middle;
+}
+
+.admin-table tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table tr:hover td {
+    background: #f5f0e8;
+}
+
+/* ─── Status badge ───────────────────────────── */
+.admin-status-badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 2px;
+    border: 1px solid;
+    white-space: nowrap;
+}
+
+.admin-status-badge.active {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-color: #2e7d32;
+}
+
+.admin-status-badge.inactive {
+    background: #fde8e8;
+    color: #c0392b;
+    border-color: #c0392b;
+}
+
+/* ─── Table action buttons ───────────────────── */
+.admin-table-actions {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+/* ─── Mobile ─────────────────────────────────── */
+@media (max-width: 640px) {
+    .admin-main {
+        padding: 12px;
+    }
+
+    .admin-header {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .admin-table th,
+    .admin-table td {
+        padding: 6px 8px;
+        font-size: 0.72rem;
+    }
+}
