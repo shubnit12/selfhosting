@@ -1,6 +1,8 @@
+import './Dashboard.css';
+import '../Overlay.css';
 import { useNavigate } from "react-router-dom";
-import { folderAPI, fileAPI } from "../api/client";
-import { useState, useEffect } from "react";
+import { folderAPI, fileAPI, API_BASE_URL,shareAPI } from "../api/client";
+import { useState, useEffect, useRef } from "react";
 import FileThumbnail from '../components/FileThumbnail';
 
 import { calculateFileHash, splitFileIntoChunks } from '../utils/fileHash';
@@ -19,7 +21,67 @@ function Dashboard() {
     const [stagedFiles, setStagedFiles] = useState<File[]>([]);
     const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set());
 
+    const [overlayBlobUrl, setOverlayBlobUrl] = useState<string | null>(null);
+    const [breadcrumbPath, setBreadcrumbPath] = useState<{ id: string, name: string }[]>([]);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [overlayFile, setOverlayFile] = useState<any>(null);
+    const [zoomed, setZoomed] = useState(false);
 
+
+    const [moveModalFiles, setMoveModalFiles] = useState<any[]>([]);
+const [moveModalOpen, setMoveModalOpen] = useState(false);
+const [shareModalFile, setShareModalFile] = useState<any>(null);
+const [shareLink, setShareLink] = useState<any>(null);
+const [sharePassword, setSharePassword] = useState('');
+const [shareExpiry, setShareExpiry] = useState('');
+const [shareMaxDownloads, setShareMaxDownloads] = useState('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const addMoreInputRef = useRef<HTMLInputElement>(null);
+
+const [copiedToast, setCopiedToast] = useState(false);
+
+    const buildBreadcrumb = (folders: any[], targetId: string, path: { id: string, name: string }[] = []): { id: string, name: string }[] | null => {
+        for (const folder of folders) {
+            const currentPath = [...path, { id: folder.id, name: folder.name }];
+            if (folder.id === targetId) return currentPath;
+            if (folder.subfolders?.length > 0) {
+                const found = buildBreadcrumb(folder.subfolders, targetId, currentPath);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
+const flattenFolderTree = (folders: any[], depth = 0): { id: string, name: string, depth: number }[] => {
+    const result: { id: string, name: string, depth: number }[] = [];
+    for (const folder of folders) {
+        result.push({ id: folder.id, name: folder.name, depth });
+        if (folder.subfolders?.length > 0) {
+            result.push(...flattenFolderTree(folder.subfolders, depth + 1));
+        }
+    }
+    return result;
+};
+    const handleAddMoreFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newFiles = Array.from(e.target.files || []);
+    setStagedFiles(prev => {
+        const existingKeys = new Set(prev.map(f => `${f.name}-${f.size}`));
+        const filtered = newFiles.filter(f => !existingKeys.has(`${f.name}-${f.size}`));
+        return [...prev, ...filtered];
+    });
+    e.target.value = '';
+};
+
+    useEffect(() => {
+        if (overlayFile) {
+            history.pushState({ overlay: true }, '');
+            const handlePopState = () => {
+                setOverlayFile(null);
+                setZoomed(false);
+            };
+            window.addEventListener('popstate', handlePopState);
+            return () => window.removeEventListener('popstate', handlePopState);
+        }
+    }, [overlayFile]);
 
     useEffect(() => {
         fetchFolderTree();
@@ -31,7 +93,19 @@ function Dashboard() {
             fetchRootFiles();
         }
     }, [selectedFolderId])
-
+    useEffect(() => {
+        if (!overlayFile) {
+            if (overlayBlobUrl) {
+                URL.revokeObjectURL(overlayBlobUrl);
+                setOverlayBlobUrl(null);
+            }
+            return;
+        }
+        fileAPI.download(overlayFile.id).then((blob: Blob) => {
+            const url = URL.createObjectURL(blob);
+            setOverlayBlobUrl(url);
+        });
+    }, [overlayFile]);
 
     const fetchRootFiles = async () => {
         try {
@@ -76,6 +150,8 @@ function Dashboard() {
     const handleFolderClick = (folderId: string) => {
         setSelectedFolderId(folderId)
         setSelectedFileIds(new Set());
+        const path = buildBreadcrumb(folderTree, folderId);
+        setBreadcrumbPath(path || []);
         console.log('Selected folder:', folderId);
     }
 
@@ -282,25 +358,31 @@ function Dashboard() {
             console.error('Delete failed:', error);
         }
     }
-    const handleFileMove = async (fileId: string, filename: string) => {
-        // Simple approach: prompt for folder ID
-        const targetFolderId = prompt(`Move "${filename}" to folder ID (or leave empty for root):`);
+    // const handleFileMove = async (fileId: string, filename: string) => {
+    //     // Simple approach: prompt for folder ID
+    //     const targetFolderId = prompt(`Move "${filename}" to folder ID (or leave empty for root):`);
 
-        // User cancelled
-        if (targetFolderId === null) return;
+    //     // User cancelled
+    //     if (targetFolderId === null) return;
 
-        try {
-            await fileAPI.move(fileId, targetFolderId || null);
-            console.log('File moved:', filename);
+    //     try {
+    //         await fileAPI.move(fileId, targetFolderId || null);
+    //         console.log('File moved:', filename);
 
-            // Refresh folder tree
-            await fetchFolderTree();
-        } catch (error) {
-            console.error('Move file failed:', error);
-            alert('Move failed. Folder may not exist or you may not have permission.');
-        }
-    };
+    //         // Refresh folder tree
+    //         await fetchFolderTree();
+    //     } catch (error) {
+    //         console.error('Move file failed:', error);
+    //         alert('Move failed. Folder may not exist or you may not have permission.');
+    //     }
+    // };
 
+    const handleFileMove = (fileId: string, filename: string) => {
+    const file = (rootFiles as any[]).find(f => f.id === fileId) ||
+        (folderTree as any[]).flatMap((f: any) => f.files || []).find((f: any) => f.id === fileId);
+    setMoveModalFiles([{ id: fileId, original_name: filename }]);
+    setMoveModalOpen(true);
+};
     const checkPendingUploads = () => {
         const pendingSessions: any[] = [];
 
@@ -451,27 +533,69 @@ function Dashboard() {
         await fetchFolderTree();
         if (selectedFolderId === null) await fetchRootFiles();
     };
-    const handleBulkMove = async (files: any[]) => {
-        const toMove = files.filter(f => selectedFileIds.has(f.id));
-        if (toMove.length === 0) return;
-        const targetFolderId = prompt(`Move ${toMove.length} file(s) to folder ID (leave empty for root):`);
-        if (targetFolderId === null) return;
-        for (const file of toMove) {
-            await fileAPI.move(file.id, targetFolderId || null);
-        }
-        setSelectedFileIds(new Set());
-        await fetchFolderTree();
-        if (selectedFolderId === null) await fetchRootFiles();
-    };
+    // const handleBulkMove = async (files: any[]) => {
+    //     const toMove = files.filter(f => selectedFileIds.has(f.id));
+    //     if (toMove.length === 0) return;
+    //     const targetFolderId = prompt(`Move ${toMove.length} file(s) to folder ID (leave empty for root):`);
+    //     if (targetFolderId === null) return;
+    //     for (const file of toMove) {
+    //         await fileAPI.move(file.id, targetFolderId || null);
+    //     }
+    //     setSelectedFileIds(new Set());
+    //     await fetchFolderTree();
+    //     if (selectedFolderId === null) await fetchRootFiles();
+    // };
+const handleBulkMove = (files: any[]) => {
+    const toMove = files.filter(f => selectedFileIds.has(f.id));
+    if (toMove.length === 0) return;
+    setMoveModalFiles(toMove);
+    setMoveModalOpen(true);
+};
+const handleMoveConfirm = async (targetFolderId: string | null) => {
+    for (const file of moveModalFiles) {
+        await fileAPI.move(file.id, targetFolderId);
+    }
+    setMoveModalOpen(false);
+    setMoveModalFiles([]);
+    setSelectedFileIds(new Set());
+    await fetchFolderTree();
+    if (selectedFolderId === null) await fetchRootFiles();
+};
+const handleShareFile = (file: any) => {
+    setShareModalFile(file);
+    setShareLink(null);
+    setSharePassword('');
+    setShareExpiry(new Date(Date.now() + 86400000).toISOString().split('T')[0]);
+    setShareMaxDownloads('2');
+};
 
-
+const handleCreateShareLink = async () => {
+    if (!shareModalFile) return;
+    try {
+        const result = await shareAPI.create(shareModalFile.id, {
+            password: sharePassword || undefined,
+            expires_at: shareExpiry || undefined,
+            max_downloads: shareMaxDownloads ? parseInt(shareMaxDownloads) : undefined,
+            allow_preview: true
+        });
+        setShareLink(result.share_link);
+    } catch (error) {
+        alert('Failed to create share link.');
+    }
+};
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
 
     return (
-        <div>
-            <header>
-                <h1>File Server</h1>
+        <div className="dashboard-wrapper">
+            {/* <h1>Shubnit's Drive</h1> */}
+            <h1 style={{ display: 'flex', alignItems: 'center', gap: '0px', fontSize: '26px', marginBottom: '0px', marginTop: '0px' }}>
+                <img src="/chiyo.svg" alt="logo" style={{ height: '80px', width: 'auto' }} />
+                Shubnit's Drive
+            </h1>
+            <header className="dashboard-header">
+
+
 
                 {pendingUploads.length > 0 && (
                     <div>
@@ -502,21 +626,30 @@ function Dashboard() {
 
                     </div>
                 )}
-                <button onClick={() => navigate('/trash')}>Trash</button>
-                <button onClick={() => navigate('/settings')}>Settings</button>
-                {currentUser.role === 'admin' && (
-                    <button onClick={() => navigate('/admin')}>Admin Panel</button>
-                )}
-                <button onClick={handleLogout}>Logout</button>
+
+                <div className="header-nav">
+                    <button className="header-btn" onClick={() => navigate('/share-links')}>Shared Links</button>
+                    <button className="header-btn" onClick={() => navigate('/trash')}>Trash</button>
+                    <button className="header-btn" onClick={() => navigate('/settings')}>Settings</button>
+                    {currentUser.role === 'admin' && (
+                        <button className="header-btn" onClick={() => navigate('/admin')}>Admin</button>
+                    )}
+                    <button className="header-btn header-btn-danger" onClick={handleLogout}>Logout</button>
+                </div>
+                <button className="hamburger-btn" onClick={() => setSidebarOpen(prev => !prev)}>☰</button>
             </header>
-            <div>
+
+            <div className="dashboard-body">
+
+                {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+
                 {/* Sidebar */}
-                <aside>
-                    <h2>Folders</h2>
+                <aside className={`dashboard-sidebar${sidebarOpen ? ' open' : ''}`}>
+                    <h2 className="sidebar-heading">Folders</h2>
 
                     <div
-                        onClick={() => { setSelectedFolderId(null); setSelectedFileIds(new Set()); }}
-                        style={{ cursor: 'pointer', fontWeight: selectedFolderId === null ? 'bold' : 'normal' }}
+                        className={`sidebar-root${selectedFolderId === null ? ' active' : ''}`}
+                        onClick={() => { setSelectedFolderId(null); setSelectedFileIds(new Set()); setBreadcrumbPath([]); setSidebarOpen(false); }}
                     >
                         📁 Root
                     </div>
@@ -532,7 +665,7 @@ function Dashboard() {
                         )} */}
 
                     {folderTree.length > 0 && (
-                        <ul style={{ marginLeft: '20px' }}>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                             {folderTree.map((folder: any) => (
                                 <FolderItem
                                     key={folder.id}
@@ -550,43 +683,89 @@ function Dashboard() {
                 </aside>
 
                 {/* Main content */}
-                <main>
-                    <h2>Files</h2>
+                <main className="dashboard-main">
+                    {/* <h2>Files</h2> */}
+                    <div className="breadcrumb">
+                        <span className="breadcrumb-item" onClick={() => { setSelectedFolderId(null); setBreadcrumbPath([]); }}>Root</span>
+                        {breadcrumbPath.map((crumb, i) => (
+                            <>
+                                <span className="breadcrumb-sep" key={crumb.id + '-sep'}>/</span>
+                                {i === breadcrumbPath.length - 1
+                                    ? <span className="breadcrumb-current" key={crumb.id}>{crumb.name}</span>
+                                    : <span className="breadcrumb-item" key={crumb.id} onClick={() => handleFolderClick(crumb.id)}>{crumb.name}</span>
+                                }
+                            </>
+                        ))}
+                    </div>
 
                     {
                         selectedFolder ? (
-                            <div>
-                                <p>Folder: {selectedFolder.name}</p>
+                            <div className="upload-area">
+                                {/* <p>Folder: {selectedFolder.name}</p>
+                                 */}
+                                <div className="folder-actions-bar">
+                                    <span className="folder-actions-title">📁 {selectedFolder.name}</span>
+                                    <div className="folder-item-actions">
+                                        <button className="folder-action-btn" onClick={() => handleFolderRename(selectedFolder.id, selectedFolder.name)}>Rename</button>
+                                        {currentUser.role === 'admin' && <>
+                                            {selectedFolder.is_public
+                                                ? <>
+                                                    <span style={{ fontSize: '11px', color: '#4a7c59' }}>🌐 {selectedFolder.public_slug}</span>
+                                                    <button className="folder-action-btn" onClick={() => handleMakePrivate(selectedFolder.id)}>Make Private</button>
+                                                </>
+                                                : <button className="folder-action-btn" onClick={() => handleMakePublic(selectedFolder.id, selectedFolder.name)}>Make Public</button>
+                                            }
+                                        </>}
+                                        <button className="folder-action-btn folder-action-btn-danger" onClick={() => handleFolderDelete(selectedFolder.id, selectedFolder.name)}>Delete</button>
+                                    </div>
+                                </div>
 
                                 <input
+                                    className="sidebar-input"
                                     type="text"
                                     placeholder="New Folder Name"
                                     value={newFolderName}
                                     onChange={(e) => setNewFolderName(e.target.value)}
                                 />
-                                <button onClick={handlerCreateFolder}>Crete Folder</button><br></br><br></br>
+                                <button className="upload-btn" onClick={handlerCreateFolder}>Crete Folder</button><br></br><br></br>
                                 <input
+                                    ref={fileInputRef}
                                     type="file"
                                     multiple
                                     onChange={handleMultiFileUpload}
-                                    style={{ marginBottom: '10px' }}
+                                    style={{ display: 'none' }}
                                 />
+                                <button className="file-input-btn" onClick={() => fileInputRef.current?.click()}>
+                                    📂 Choose Files
+                                </button>
+                                <input
+    ref={addMoreInputRef}
+    type="file"
+    multiple
+    onChange={handleAddMoreFiles}
+    style={{ display: 'none' }}
+/>
                                 {/* Staged files preview + Upload button */}
                                 {stagedFiles.length > 0 && (
                                     <div>
                                         <p>{stagedFiles.length} file(s) selected:</p>
                                         <ul>
                                             {stagedFiles.map((file, index) => (
-                                                <li key={index}> {file.type.startsWith('image/')
+                                                <li key={index} className="staged-file-item"> {file.type.startsWith('image/')
                                                     ? <img src={URL.createObjectURL(file)} width={60} height={60} style={{ objectFit: 'cover', borderRadius: '4px', verticalAlign: 'middle', marginRight: '6px' }} />
                                                     : file.type.startsWith('video/')
                                                         ? <video src={URL.createObjectURL(file)} width={60} height={60} style={{ objectFit: 'cover', borderRadius: '4px', verticalAlign: 'middle', marginRight: '6px' }} muted />
                                                         : <span style={{ marginRight: '6px' }}>📄</span>
-                                                } {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</li>
+                                                } 
+                                                <span className="staged-file-name">{file.name} <span className="staged-file-size">({(file.size / 1024 / 1024).toFixed(2)} MB)</span></span>
+    <button className="staged-file-remove" onClick={() => setStagedFiles(prev => prev.filter((_, i) => i !== index))}>✕</button>
+    </li>
                                             ))}
                                         </ul>
-                                        <button onClick={handleStartUpload}>Upload {stagedFiles.length} file(s)</button>
-                                        <button onClick={() => setStagedFiles([])}>Cancel</button>
+                                        <button className="upload-btn" onClick={handleStartUpload}>Upload {stagedFiles.length} file(s)</button>
+                                        <button className="file-input-btn" onClick={() => addMoreInputRef.current?.click()}>+ Add More</button>
+                                        <button className="upload-btn" onClick={() => setStagedFiles([])}>Cancel</button>
+
                                     </div>
                                 )}
                                 <p>Files: {filesToDisplay.length}</p>
@@ -610,24 +789,26 @@ function Dashboard() {
                                     </div>
                                 )} */}
                                 {uploadQueue.length > 0 && (
-                                    <div>
+                                    <div className="upload-progress-area">
                                         <p>Uploading files: {uploadQueue.filter(i => i.status === 'done').length}/{uploadQueue.length} done</p>
                                         {uploadQueue.map(item => (
-                                            <div key={item.id} style={{ marginBottom: '8px' }}>
+                                            <div key={item.id} className="upload-progress-row">
                                                 <p style={{ margin: '0' }}>
-                                                    {item.previewUrl && item.file.type.startsWith('image/')
+                                                    {/* {item.previewUrl && item.file.type.startsWith('image/')
                                                         ? <img src={item.previewUrl} width={40} height={40} style={{ objectFit: 'cover', borderRadius: '4px', verticalAlign: 'middle', marginRight: '6px' }} />
                                                         : item.previewUrl && item.file.type.startsWith('video/')
                                                             ? <video src={item.previewUrl} width={40} height={40} style={{ objectFit: 'cover', borderRadius: '4px', verticalAlign: 'middle', marginRight: '6px' }} muted />
                                                             : <span style={{ marginRight: '6px' }}>📄</span>
-                                                    } {item.filename} — {item.status === 'error' ? `❌ ${item.error}` : item.status === 'done' ? '✅ done' : `${item.progress}%`}
+                                                    } {item.filename} — {item.status === 'error' ? `❌ ${item.error}` : item.status === 'done' ? '✅ done' : `${item.progress}%`} */}
+                                                    {item.filename} — {item.status === 'error' ? `❌ ${item.error}` : item.status === 'done' ? '✅ done' : `${item.progress}%`}
+
                                                 </p>
-                                                <div style={{ width: '100%', height: '8px', backgroundColor: '#e0e0e0', borderRadius: '4px', overflow: 'hidden' }}>
-                                                    <div style={{
+                                                <div className="upload-progress-bar-track">
+                                                    <div className="upload-progress-bar-fill" style={{
                                                         width: `${item.progress}%`,
-                                                        height: '100%',
-                                                        backgroundColor: item.status === 'error' ? '#f44336' : item.status === 'done' ? '#4CAF50' : '#2196F3',
-                                                        transition: 'width 0.2s'
+
+                                                        backgroundColor: item.status === 'error' ? '#c0392b' : item.status === 'done' ? '#4a7c59' : '#2d2d2d'
+
                                                     }} />
                                                 </div>
                                             </div>
@@ -638,40 +819,38 @@ function Dashboard() {
                                     <p>No files in this folder</p>
                                 ) : (
                                     <div>
-                                        <div>
+                                        <div className="bulk-toolbar">
                                             <input
                                                 type="checkbox"
                                                 checked={filesToDisplay.every((f: any) => selectedFileIds.has(f.id))}
                                                 onChange={() => toggleSelectAll(filesToDisplay)}
                                             />
-                                            <span> Select All</span>
+                                            <span>Select All</span>
                                             {selectedFileIds.size > 0 && (
                                                 <>
-                                                    <button onClick={() => handleBulkDelete(filesToDisplay)}>Delete ({selectedFileIds.size})</button>
-                                                    <button onClick={() => handleBulkMove(filesToDisplay)}>Move ({selectedFileIds.size})</button>
-                                                    <button onClick={() => setSelectedFileIds(new Set())}>Clear</button>
+                                                    <button className="bulk-btn bulk-btn-danger" onClick={() => handleBulkDelete(filesToDisplay)}>Delete ({selectedFileIds.size})</button>
+                                                    <button className="bulk-btn" onClick={() => handleBulkMove(filesToDisplay)}>Move ({selectedFileIds.size})</button>
+                                                    <button className="bulk-btn" onClick={() => setSelectedFileIds(new Set())}>Clear</button>
                                                 </>
                                             )}
                                         </div>
-                                        <ul>
+                                        <ul className="file-list">
                                             {filesToDisplay.map((file: any) => (
-                                                <li key={file.id} style={{ marginBottom: '5px' }}>
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedFileIds.has(file.id)}
-                                                        onChange={() => toggleFileSelection(file.id)}
-                                                    />
-                                                    <span
-                                                        onClick={() => handleFileDownload(file.id, file.original_name)}
-                                                        style={{ cursor: 'pointer' }}
-                                                    >
-                                                        <FileThumbnail fileId={file.id} mimeType={file.mime_type} />
-                                                        {file.original_name} ({file.size} bytes)
+                                                <li key={file.id} className="file-row">
+                                                    <input  type="checkbox" checked={selectedFileIds.has(file.id)} onChange={() => toggleFileSelection(file.id)} />
+                                                    <div className="file-thumb-area" onClick={() => { setOverlayFile(file); setZoomed(false); }}>
+                                                        <FileThumbnail fileId={file.id} mimeType={file.mime_type} fill />
+                                                    </div>
+                                                    <span className="file-name" onClick={() => handleFileDownload(file.id, file.original_name)}>
+                                                        {file.original_name}
                                                     </span>
-                                                    {' '}
-                                                    <button onClick={() => handleFileMove(file.id, file.original_name)}>Move</button>
-                                                    {' '}
-                                                    <button onClick={() => handleFileDelete(file.id, file.original_name)}>Delete</button>
+                                                    <span className="file-size">{(file.size / (1024 * 1024)).toFixed(1)} MB</span>
+                                                    <div className="file-row-actions">
+                                                        <button className="file-action-btn" onClick={() => handleFileMove(file.id, file.original_name)}>Move</button>
+                                                        <button className="file-action-btn" onClick={() => handleShareFile(file)}>Share</button>
+
+                                                        <button className="file-action-btn file-action-btn-danger" onClick={() => handleFileDelete(file.id, file.original_name)}>Delete</button>
+                                                    </div>
                                                 </li>
                                             ))}
                                         </ul>
@@ -680,48 +859,63 @@ function Dashboard() {
                             </div>
 
                         ) : (
-                            <div>
-                                <p>Folder: Root</p>  {/* ← Show "Root" when null */}
+                            <div className="upload-area">
+                                {/* <p>Folder: Root</p>  ← Show "Root" when null */}
 
                                 {/* Upload and create folder UI */}
                                 <input
+                                    className="sidebar-input"
                                     type="text"
                                     placeholder="New Folder Name"
                                     value={newFolderName}
                                     onChange={(e) => setNewFolderName(e.target.value)}
                                 />
-                                <button onClick={handlerCreateFolder}>Create Folder</button>
+                                <button className="upload-btn" onClick={handlerCreateFolder}>Create Folder</button>
                                 <br /><br />
                                 <input
+                                ref={fileInputRef}
                                     type="file"
                                     multiple
                                     onChange={handleMultiFileUpload}
-                                    style={{ marginBottom: '10px' }}
+                                    style={{ display: 'none' }}
                                 />
+                                <button className="file-input-btn" onClick={() => fileInputRef.current?.click()}>
+    📂 Choose Files
+</button>
+<input
+    ref={addMoreInputRef}
+    type="file"
+    multiple
+    onChange={handleAddMoreFiles}
+    style={{ display: 'none' }}
+/>
                                 {/* Staged files preview + Upload button */}
                                 {stagedFiles.length > 0 && (
                                     <div>
                                         <p>{stagedFiles.length} file(s) selected:</p>
-                                        <ul>
+                                        <ul className='selectdItemsUl' >
                                             {stagedFiles.map((file, index) => (
-                                                <li key={index}>{file.type.startsWith('image/')
+                                                <li className='selectdItemsLi' key={index}>{file.type.startsWith('image/')
                                                     ? <img src={URL.createObjectURL(file)} width={60} height={60} style={{ objectFit: 'cover', borderRadius: '4px', verticalAlign: 'middle', marginRight: '6px' }} />
                                                     : file.type.startsWith('video/')
                                                         ? <video src={URL.createObjectURL(file)} width={60} height={60} style={{ objectFit: 'cover', borderRadius: '4px', verticalAlign: 'middle', marginRight: '6px' }} muted />
                                                         : <span style={{ marginRight: '6px' }}>📄</span>
-                                                } {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</li>
+                                                }
+                                                 <span className="staged-file-name">{file.name} <span className="staged-file-size">({(file.size / 1024 / 1024).toFixed(2)} MB)</span></span>
+    <button className="staged-file-remove" onClick={() => setStagedFiles(prev => prev.filter((_, i) => i !== index))}>✕</button></li>
                                             ))}
                                         </ul>
-                                        <button onClick={handleStartUpload}>Upload {stagedFiles.length} file(s)</button>
-                                        <button onClick={() => setStagedFiles([])}>Cancel</button>
+                                        <button className="upload-btn" onClick={handleStartUpload}>Upload {stagedFiles.length} file(s)</button>
+                                        <button className="file-input-btn" onClick={() => addMoreInputRef.current?.click()}>+ Add More</button>
+                                        <button className="upload-btn" onClick={() => setStagedFiles([])}>Cancel</button>
                                     </div>
                                 )}
                                 <p>Files: {rootFiles.length}</p>
                                 {uploadQueue.length > 0 && (
-                                    <div>
+                                    <div className="upload-progress-area">
                                         <p>Uploading files: {uploadQueue.filter(i => i.status === 'done').length}/{uploadQueue.length} done</p>
                                         {uploadQueue.map(item => (
-                                            <div key={item.id} style={{ marginBottom: '8px' }}>
+                                            <div key={item.id} className="upload-progress-row">
                                                 <p style={{ margin: '0' }}>
                                                     {item.previewUrl && item.file.type.startsWith('image/')
                                                         ? <img src={item.previewUrl} width={40} height={40} style={{ objectFit: 'cover', borderRadius: '4px', verticalAlign: 'middle', marginRight: '6px' }} />
@@ -730,8 +924,8 @@ function Dashboard() {
                                                             : <span style={{ marginRight: '6px' }}>📄</span>
                                                     } {item.filename} — {item.status === 'error' ? `❌ ${item.error}` : item.status === 'done' ? '✅ done' : `${item.progress}%`}
                                                 </p>
-                                                <div style={{ width: '100%', height: '8px', backgroundColor: '#e0e0e0', borderRadius: '4px', overflow: 'hidden' }}>
-                                                    <div style={{
+                                                <div className="upload-progress-bar-track" style={{ width: '100%', height: '8px', backgroundColor: '#e0e0e0', borderRadius: '4px', overflow: 'hidden' }}>
+                                                    <div className="upload-progress-bar-fill" style={{
                                                         width: `${item.progress}%`,
                                                         height: '100%',
                                                         backgroundColor: item.status === 'error' ? '#f44336' : item.status === 'done' ? '#4CAF50' : '#2196F3',
@@ -747,40 +941,38 @@ function Dashboard() {
                                     <p>No files in Root folder</p>
                                 ) : (
                                     <div>
-                                        <div>
+                                        <div className="bulk-toolbar">
                                             <input
                                                 type="checkbox"
-                                                checked={rootFiles.every((f: any) => selectedFileIds.has(f.id))}
-                                                onChange={() => toggleSelectAll(rootFiles)}
+                                                checked={filesToDisplay.every((f: any) => selectedFileIds.has(f.id))}
+                                                onChange={() => toggleSelectAll(filesToDisplay)}
                                             />
-                                            <span> Select All</span>
+                                            <span>Select All</span>
                                             {selectedFileIds.size > 0 && (
                                                 <>
-                                                    <button onClick={() => handleBulkDelete(rootFiles)}>Delete ({selectedFileIds.size})</button>
-                                                    <button onClick={() => handleBulkMove(rootFiles)}>Move ({selectedFileIds.size})</button>
-                                                    <button onClick={() => setSelectedFileIds(new Set())}>Clear</button>
+                                                    <button className="bulk-btn bulk-btn-danger" onClick={() => handleBulkDelete(filesToDisplay)}>Delete ({selectedFileIds.size})</button>
+                                                    <button className="bulk-btn" onClick={() => handleBulkMove(filesToDisplay)}>Move ({selectedFileIds.size})</button>
+                                                    <button className="bulk-btn" onClick={() => setSelectedFileIds(new Set())}>Clear</button>
                                                 </>
                                             )}
                                         </div>
-                                        <ul>
-                                            {rootFiles.map((file: any) => (
-                                                <li key={file.id} style={{ marginBottom: '5px' }}>
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedFileIds.has(file.id)}
-                                                        onChange={() => toggleFileSelection(file.id)}
-                                                    />
-                                                    <span
-                                                        onClick={() => handleFileDownload(file.id, file.original_name)}
-                                                        style={{ cursor: 'pointer' }}
-                                                    >
-                                                        <FileThumbnail fileId={file.id} mimeType={file.mime_type} />
-                                                        {file.original_name} ({file.size} bytes)
+                                        <ul className="file-list">
+                                            {filesToDisplay.map((file: any) => (
+                                                <li key={file.id} className="file-row">
+                                                    <input  type="checkbox" checked={selectedFileIds.has(file.id)} onChange={() => toggleFileSelection(file.id)} />
+                                                    <div className="file-thumb-area" onClick={() => { setOverlayFile(file); setZoomed(false); }}>
+                                                        <FileThumbnail fileId={file.id} mimeType={file.mime_type} fill />
+                                                    </div>
+                                                    <span className="file-name" onClick={() => handleFileDownload(file.id, file.original_name)}>
+                                                        {file.original_name}
                                                     </span>
-                                                    {' '}
-                                                    <button onClick={() => handleFileMove(file.id, file.original_name)}>Move</button>
-                                                    {' '}
-                                                    <button onClick={() => handleFileDelete(file.id, file.original_name)}>Delete</button>
+                                                    <span className="file-size">{(file.size / 1024).toFixed(1)} KB</span>
+                                                    <div className="file-row-actions">
+                                                        <button className="file-action-btn" onClick={() => handleFileMove(file.id, file.original_name)}>Move</button>
+                                                        <button className="file-action-btn" onClick={() => handleShareFile(file)}>Share</button>
+
+                                                        <button className="file-action-btn file-action-btn-danger" onClick={() => handleFileDelete(file.id, file.original_name)}>Delete</button>
+                                                    </div>
                                                 </li>
                                             ))}
                                         </ul>
@@ -820,7 +1012,148 @@ function Dashboard() {
     </div> */}
                 </main>
             </div>
+            {overlayFile && (
+                <div
+                    className="overlay-backdrop"
+                    onClick={() => { setOverlayFile(null); setZoomed(false); }}
+                >
+                    <div className="overlay-content" onClick={(e) => e.stopPropagation()}>
+                        {overlayFile.mime_type?.startsWith('image/') ? (
+                            <img
+                                src={overlayBlobUrl || ''}
+                                className={`overlay-img${zoomed ? ' zoomed' : ''}`}
+                                onClick={() => setZoomed(prev => !prev)}
+                            />
+                        ) : overlayFile.mime_type?.startsWith('video/') ? (
+                            <video
+                                src={overlayBlobUrl || ''}
+                                className="overlay-video"
+                                controls
+                                autoPlay
+                            />
+                        ) : (
+                            <div className="overlay-other">
+                                <p className="overlay-filename">{overlayFile.original_name}</p>
+                                <button
+                                    className="upload-btn"
+                                    onClick={() => handleFileDownload(overlayFile.id, overlayFile.original_name)}
+                                >
+                                    Download
+                                </button>
+                            </div>
+                        )}
+                        <button
+                            className="overlay-close-btn"
+                            onClick={() => { setOverlayFile(null); setZoomed(false); }}
+                        >
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            )}
+            {moveModalOpen && (
+    <div className="move-modal-backdrop" onClick={() => setMoveModalOpen(false)}>
+        <div className="move-modal" onClick={(e) => e.stopPropagation()}>
+            <p className="move-modal-title">
+                Move {moveModalFiles.length === 1 ? `"${moveModalFiles[0].original_name}"` : `${moveModalFiles.length} files`} to...
+            </p>
+            <ul className="move-modal-list">
+                <li className="move-modal-item" onClick={() => handleMoveConfirm(null)}>
+                    🏠 Root (no folder)
+                </li>
+                {flattenFolderTree(folderTree).map((folder) => (
+                    <li
+                        key={folder.id}
+                        className="move-modal-item"
+                        style={{ paddingLeft: `${12 + folder.depth * 16}px` }}
+                        onClick={() => handleMoveConfirm(folder.id)}
+                    >
+                        📁 {folder.name}
+                    </li>
+                ))}
+            </ul>
+            <button className="file-input-btn" onClick={() => setMoveModalOpen(false)}>Cancel</button>
         </div>
+    </div>
+)}
+{shareModalFile && (
+    <div className="move-modal-backdrop" onClick={() => setShareModalFile(null)}>
+        <div className="move-modal" onClick={(e) => e.stopPropagation()}>
+            <p className="move-modal-title">Share "{shareModalFile.original_name}"</p>
+
+            {!shareLink ? (
+                <>
+                    <input
+                        className="sidebar-input"
+                        type="password"
+                        placeholder="Password (optional)"
+                        value={sharePassword}
+                        onChange={(e) => setSharePassword(e.target.value)}
+                    />
+                    <input
+                        className="sidebar-input"
+                        type="date"
+                        placeholder="Expiry date (optional)"
+                        value={shareExpiry}
+                        min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+                        onChange={(e) => setShareExpiry(e.target.value)}
+                    />
+                    <input
+                        className="sidebar-input"
+                        type="number"
+                        placeholder="Max downloads (optional)"
+                        value={shareMaxDownloads}
+                         min="1"
+                          onChange={(e) => {
+        const val = parseInt(e.target.value);
+        if (!e.target.value || val >= 1) setShareMaxDownloads(e.target.value);
+    }}
+                    />
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="upload-btn" onClick={handleCreateShareLink}>Create Link</button>
+                        <button className="file-input-btn" onClick={() => setShareModalFile(null)}>Cancel</button>
+                    </div>
+                </>
+            ) : (
+                <>
+                    <p style={{ fontSize: '0.75rem', color: '#4a7c59', fontWeight: 700 }}>Link created!</p>
+                    {copiedToast && (
+    <p style={{ fontSize: '0.75rem', color: '#fff', background: '#2d2d2d', padding: '4px 10px', borderRadius: '2px', margin: 0, fontWeight: 700 }}>
+        ✓ Copied!
+    </p>
+)}
+                    <input
+                        className="sidebar-input"
+                        type="text"
+                        readOnly
+                        value={shareLink.public_url}
+                        onFocus={(e) => e.target.select()}
+                    />
+                    <div style={{ display: 'flex', gap: '8px' }}>
+<button className="upload-btn" onClick={() => {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(shareLink.public_url).then(() => { if (navigator.vibrate) navigator.vibrate(60);
+setCopiedToast(true); setTimeout(() => setCopiedToast(false), 2000);});
+    } else {
+        const el = document.createElement('textarea');
+        el.value = shareLink.public_url;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        if (navigator.vibrate) navigator.vibrate(60);
+
+        setCopiedToast(true); setTimeout(() => setCopiedToast(false), 2000);;
+    }
+}}>Copy URL</button>                        <button className="file-input-btn" onClick={() => setShareModalFile(null)}>Close</button>
+                    </div>
+                </>
+            )}
+        </div>
+    </div>
+)}
+        </div>
+
     )
 }
 
@@ -846,36 +1179,25 @@ interface UploadItem {
 }
 
 function FolderItem({ folder, onFolderClick, onFolderDelete, onFolderRename, onMakePublic, onMakePrivate, role }: FolderItemProps) {
+    const [collapsed, setCollapsed] = useState(false);
     return (
-        <li>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
+        <li style={{ listStyle: 'none' }}>
+            <div className="folder-item-row">
                 <span
+                    className="folder-item-name"
                     onClick={() => onFolderClick(folder.id)}
-                    style={{ cursor: 'pointer', flex: 1 }}
                 >
-                    📁 {folder.name} ({folder.file_count} files)
+                    📁 {folder.name}
+                    <span style={{ fontSize: '0.7rem', color: '#a09070', marginLeft: '4px' }}>({folder.file_count})</span>
                 </span>
-                <button onClick={() => onFolderRename(folder.id, folder.name)}>
-                    Rename
-                </button>
-                {' '}
-
-                {role === 'admin' && <>{folder.is_public
-                    ? <>
-                        <span style={{ fontSize: '12px', color: 'green' }}>🌐 public/{folder.public_slug}</span>
-                        {' '}
-                        <button onClick={() => onMakePrivate(folder.id)}>Make Private</button>
-                    </>
-                    : <button onClick={() => onMakePublic(folder.id, folder.name)}>Make Public</button>
-                }</>}
-
-                {' '}
-                <button onClick={() => onFolderDelete(folder.id, folder.name)}>
-                    Delete
-                </button>
+                {folder.subfolders.length > 0 && (
+                    <span className="folder-toggle" onClick={() => setCollapsed(prev => !prev)}>
+                        {collapsed ? '▶' : '▼'}
+                    </span>
+                )}
             </div>
-            {folder.subfolders.length > 0 && (
-                <ul style={{ marginLeft: '20px' }}>
+            {!collapsed && folder.subfolders.length > 0 && (
+                <ul style={{ listStyle: 'none', padding: 0, marginLeft: '12px' }}>
                     {folder.subfolders.map((subfolder: any) => (
                         <FolderItem
                             key={subfolder.id}
@@ -891,7 +1213,7 @@ function FolderItem({ folder, onFolderClick, onFolderDelete, onFolderRename, onM
                 </ul>
             )}
         </li>
-    )
+    );
 }
 
 
