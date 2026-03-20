@@ -1,7 +1,7 @@
 import './Dashboard.css';
 import '../Overlay.css';
 import { useNavigate } from "react-router-dom";
-import { folderAPI, fileAPI, API_BASE_URL,shareAPI } from "../api/client";
+import { folderAPI, fileAPI,shareAPI } from "../api/client";
 import { useState, useEffect, useRef } from "react";
 import FileThumbnail from '../components/FileThumbnail';
 
@@ -382,6 +382,7 @@ const flattenFolderTree = (folders: any[], depth = 0): { id: string, name: strin
         (folderTree as any[]).flatMap((f: any) => f.files || []).find((f: any) => f.id === fileId);
     setMoveModalFiles([{ id: fileId, original_name: filename }]);
     setMoveModalOpen(true);
+        console.log('file')
 };
     const checkPendingUploads = () => {
         const pendingSessions: any[] = [];
