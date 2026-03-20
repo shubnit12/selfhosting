@@ -214,11 +214,23 @@ export async function renameFolder(
         const newPath = '/' + pathParts.join('/');
 
         // Update folder
-        await folder.update({
-            name: newName,
-            path: newPath
-        });
-
+        // await folder.update({
+        //     name: newName,
+        //     path: newPath
+        // });
+        const updates: any = { name: newName, path: newPath };
+if (folder.is_public) {
+    const baseSlug = newName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    if (!baseSlug) {
+        throw new AppError('New folder name cannot generate a valid slug', 400);
+    }
+    const existing = await Folder.findOne({ where: { public_slug: baseSlug } });
+    if (existing && existing.id !== folderId) {
+        throw new AppError(`Slug "${baseSlug}" is already taken by another public folder`, 409);
+    }
+    updates.public_slug = baseSlug;
+}
+await folder.update(updates);
         // Update all subfolder paths
         const subfolders = await Folder.findAll({
             where: {
@@ -272,14 +284,18 @@ export async function deleteFolder(
         // Soft delete folder
         await folder.update({
             is_deleted: true,
-            deleted_at: new Date()
+            deleted_at: new Date(),
+            is_public: false,
+            public_slug: null
         });
 
         // Soft delete all subfolders
         await Folder.update(
             {
                 is_deleted: true,
-                deleted_at: new Date()
+                deleted_at: new Date(),
+                is_public: false,
+                public_slug: null
             },
             {
                 where: {
