@@ -50,6 +50,8 @@ mkdir -p storage/files storage/temp storage/thumbnails
 # 9. Setup Nginx config
 echo "🌐 Setting up Nginx..."
 sed "s|FRONTEND_DIST_PATH|$DEPLOY_ROOT/frontend/dist|g" "$DEPLOY_ROOT/deploy/nginx.conf" > $PREFIX/etc/nginx/nginx.conf
+chmod -R 755 "$DEPLOY_ROOT/frontend/dist"
+nginx -s reload
 echo "✅ Nginx configured"
 
 echo "✅ Setup complete!"
