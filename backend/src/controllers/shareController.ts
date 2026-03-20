@@ -54,7 +54,8 @@ export async function createShare(req: Request, res: Response): Promise<void> {
             }
         });
 
-        const origin = `${req.protocol}://${req.get('host')}`;
+        const host = req.get('x-forwarded-host') || req.get('host');
+        const origin = `${req.protocol}://${host}`;
         const publicUrl = `${origin}/share/${shareLink.token}`;
 
         res.status(201).json({
@@ -240,7 +241,8 @@ export async function getMyShareLinks(req: Request, res: Response): Promise<void
         const activeOnly = req.query.active_only !== 'false';
 
         const shareLinks = await getUserShareLinks(req.user.userId, activeOnly);
-        const origin = `${req.protocol}://${req.get('host')}`;
+        const host = req.get('x-forwarded-host') || req.get('host');
+        const origin = `${req.protocol}://${host}`;
 
         res.json({
             share_links: shareLinks.map(sl => ({
