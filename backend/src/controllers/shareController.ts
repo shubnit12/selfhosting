@@ -54,7 +54,8 @@ export async function createShare(req: Request, res: Response): Promise<void> {
             }
         });
 
-        const publicUrl = `${process.env.FRONTEND_URL}/share/${shareLink.token}`;
+        const origin = `${req.protocol}://${req.get('host')}`;
+        const publicUrl = `${origin}/share/${shareLink.token}`;
 
         res.status(201).json({
             message: 'Share link created successfully',
@@ -239,12 +240,13 @@ export async function getMyShareLinks(req: Request, res: Response): Promise<void
         const activeOnly = req.query.active_only !== 'false';
 
         const shareLinks = await getUserShareLinks(req.user.userId, activeOnly);
+        const origin = `${req.protocol}://${req.get('host')}`;
 
         res.json({
             share_links: shareLinks.map(sl => ({
                 id: sl.id,
                 token: sl.token,
-                public_url: `${process.env.FRONTEND_URL}/share/${sl.token}`,
+                public_url: `${origin}/share/${sl.token}`,
                 file: {
                     id: sl.file!.id,
                     name: sl.file!.original_name,
