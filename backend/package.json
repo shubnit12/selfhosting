@@ -16,7 +16,9 @@
         "migrate:undo": "sequelize-cli db:migrate:undo",
         "lint": "eslint src/**/*.ts",
         "lint:fix": "eslint src/**/*.ts --fix",
-        "sync-db": "ts-node src/sync-db.ts"
+        "sync-db-ts": "ts-node src/sync-db.ts",
+        "sync-db": "node dist/sync-db.js"
+        
     },
     "dependencies": {
         "archiver": "^7.0.1",
