@@ -1,0 +1,93 @@
+/* ─── Page wrapper ───────────────────────────── */
+.trash-page {
+    min-height: 100vh;
+    background-color: #f5f0e8;
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ─── Header ─────────────────────────────────── */
+.trash-header {
+    background-color: #2d2d2d;
+    color: #f5f0e8;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 3px solid #6b5c3e;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.trash-header h1 {
+    font-size: 1.1rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin: 0;
+    flex: 1;
+}
+
+.trash-header p {
+    font-size: 0.75rem;
+    color: #c9b99a;
+    margin: 0;
+}
+
+/* ─── Main content ───────────────────────────── */
+.trash-main {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* ─── Section heading ────────────────────────── */
+.trash-section-heading {
+    font-size: 0.8rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #6b5c3e;
+    margin-bottom: 12px;
+    border-bottom: 2px dotted #c9b99a;
+    padding-bottom: 6px;
+}
+
+/* ─── Empty state ────────────────────────────── */
+.trash-empty {
+    font-size: 0.85rem;
+    color: #a09070;
+    font-style: italic;
+    padding: 12px 0;
+}
+
+/* ─── Days badge ─────────────────────────────── */
+.days-badge {
+    font-size: 0.68rem;
+    color: #c0392b;
+    font-weight: 700;
+    background: #fde8e8;
+    border: 1px solid #c0392b;
+    border-radius: 2px;
+    padding: 1px 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ─── Mobile ─────────────────────────────────── */
+@media (max-width: 640px) {
+    .trash-main {
+        padding: 12px;
+    }
+
+    .trash-header {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+}
