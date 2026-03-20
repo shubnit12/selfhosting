@@ -378,11 +378,9 @@ const flattenFolderTree = (folders: any[], depth = 0): { id: string, name: strin
     // };
 
     const handleFileMove = (fileId: string, filename: string) => {
-    const file = (rootFiles as any[]).find(f => f.id === fileId) ||
-        (folderTree as any[]).flatMap((f: any) => f.files || []).find((f: any) => f.id === fileId);
     setMoveModalFiles([{ id: fileId, original_name: filename }]);
     setMoveModalOpen(true);
-        console.log('file')
+
 };
     const checkPendingUploads = () => {
         const pendingSessions: any[] = [];
