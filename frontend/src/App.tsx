@@ -6,13 +6,20 @@ import TrashPage from './pages/TrashPage';
 import SettingsPage from './pages/SettingsPage';
 import AdminPage from './pages/AdminPage';
 import PublicFolderPage from './pages/PublicFolderPage';
+import SharePage from './pages/SharePage';
+import ShareLinksPage from './pages/ShareLinksPage';
+
 
 function App(){
   return <BrowserRouter>
             <Routes>
               <Route path="/login" element={<LoginPage></LoginPage>}></Route>
               <Route path="/p/:slug" element={<PublicFolderPage />} />
+              <Route path="/share/:token" element={<SharePage />} />
+
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard></Dashboard></ProtectedRoute>}></Route>
+              <Route path="/share-links" element={<ProtectedRoute><ShareLinksPage /></ProtectedRoute>} />
+
               <Route 
                     path="/trash" 
                     element={
