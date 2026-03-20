@@ -1,0 +1,243 @@
+/* Page wrapper */
+.public-page {
+    min-height: 100vh;
+    background-color: #f5f0e8;
+    font-family: 'Courier New', Courier, monospace;
+    padding: 40px 16px;
+}
+
+/* Loading / error */
+.public-page-loading,
+.public-page-error {
+    text-align: center;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1rem;
+    margin-top: 60px;
+    color: #2d2d2d;
+}
+
+.public-page-error {
+    color: #c0392b;
+}
+
+/* Folder header */
+.public-folder-header {
+    max-width: 960px;
+    margin: 0 auto 32px auto;
+    border-bottom: 3px dotted #c9b99a;
+    padding-bottom: 16px;
+}
+
+.public-folder-header h1 {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: #2d2d2d;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 4px;
+}
+
+.public-folder-header p {
+    font-size: 0.85rem;
+    color: #6b5c3e;
+}
+
+/* File grid */
+.public-file-grid {
+    max-width: 960px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+padding: 0;
+list-style: none;
+}
+
+/* File card */
+.public-file-card {
+    background: #fffdf7;
+    border: 2px solid #2d2d2d;
+    border-radius: 2px;
+    padding: 12px;
+    box-shadow: 3px 3px 0px #6b5c3e;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.public-file-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border: 1px solid #d1c9b8;
+    border-radius: 2px;
+}
+
+.public-file-card-no-thumb {
+    width: 100%;
+    height: 120px;
+    background: #f0ebe0;
+    border: 1px solid #d1c9b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+}
+
+.public-file-name {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #2d2d2d;
+    word-break: break-word;
+}
+
+.public-file-size {
+    font-size: 0.75rem;
+    color: #6b5c3e;
+}
+
+/* Download button */
+.public-download-btn {
+    padding: 6px 10px;
+    background-color: #2d2d2d;
+    color: #f5f0e8;
+    border: 2px solid #2d2d2d;
+    border-radius: 2px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    display: block;
+    box-shadow: 2px 2px 0px #6b5c3e;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.public-download-btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0px #6b5c3e;
+}
+
+/* Empty state */
+.public-empty {
+    max-width: 960px;
+    margin: 0 auto;
+    font-size: 0.95rem;
+    color: #6b5c3e;
+}
+
+/* Overlay backdrop */
+/* .overlay-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+} */
+
+/* Overlay content box */
+/* .overlay-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+} */
+
+/* Overlay image */
+/* .overlay-img {
+    max-width: 90vw;
+    max-height: 85vh;
+    object-fit: contain;
+    cursor: zoom-in;
+    transition: transform 0.3s ease;
+    border: 2px solid #f5f0e8;
+} */
+
+/* .overlay-img.zoomed {
+    transform: scale(2);
+    cursor: zoom-out;
+} */
+
+/* Overlay video */
+/* .overlay-video {
+    max-width: 90vw;
+    max-height: 85vh;
+    border: 2px solid #f5f0e8;
+    background: #000;
+} */
+
+/* Overlay other files */
+/* .overlay-other {
+    background: #fffdf7;
+    border: 2px solid #2d2d2d;
+    border-radius: 2px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 4px 4px 0px #6b5c3e;
+    font-family: 'Courier New', Courier, monospace;
+} */
+
+/* .overlay-filename {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #2d2d2d;
+    word-break: break-word;
+    text-align: center;
+} */
+
+/* Close button */
+/* .overlay-close-btn {
+    position: absolute;
+    top: -16px;
+    right: -16px;
+    background: #2d2d2d;
+    color: #f5f0e8;
+    border: 2px solid #f5f0e8;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Courier New', Courier, monospace;
+} */
+
+/* .overlay-close-btn:hover {
+    background: #f5f0e8;
+    color: #2d2d2d;
+} */
+
+/* Mobile */
+/* @media (max-width: 640px) {
+    .overlay-img.zoomed {
+        transform: scale(1.5);
+    }
+} */
+
+/* Mobile */
+@media (max-width: 640px) {
+    .public-file-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+
+    .public-folder-header h1 {
+        font-size: 1.2rem;
+    }
+}
+
+@media (hover: none) {
+    .public-download-btn:hover {
+        transform: none;
+        box-shadow: 2px 2px 0px #6b5c3e;
+    }
+}
