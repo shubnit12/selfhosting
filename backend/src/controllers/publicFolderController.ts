@@ -6,6 +6,7 @@ import { AppError } from '../middleware/errorHandler';
 import logger from '../utils/logger';
 import fs from 'fs';
 import path from 'path';
+import { streamWithRange } from '../utils/streamWithRange';
 
 /**
  * GET /api/v1/public/folders
@@ -81,24 +82,8 @@ export async function downloadPublicFile(req: Request, res: Response): Promise<v
             throw new AppError('File not found on disk', 404);
         }
 
-        // Set headers
-        res.setHeader('Content-Disposition', `attachment; filename="${file.original_name}"`);
-        res.setHeader('Content-Type', file.mime_type);
-        res.setHeader('Content-Length', file.size.toString());
-
-        // Stream file
-        const stream = fs.createReadStream(filePath);
-        stream.pipe(res);
-
-        stream.on('error', (error) => {
-            logger.error('Public file stream error', {
-                error: error.message,
-                fileId
-            });
-            if (!res.headersSent) {
-                res.status(500).json({ error: 'Failed to stream file' });
-            }
-        });
+        // Stream file with Range support (enables seeking + progressive load)
+        streamWithRange(req, res, filePath, file.mime_type, file.size, file.original_name);
 
         logger.info('Public file downloaded', {
             fileId,
