@@ -1,6 +1,5 @@
 import sequelize from './config/database';
-import { User, Folder, File, FileReference, SharedLink, ActivityLog } from './models';
-
+import './models';
 async function syncDatabase() {
     try {
         console.log('🔄 Syncing database models...\n');
