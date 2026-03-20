@@ -1,3 +1,7 @@
+
+import './AdminPage.css';
+import './Dashboard.css';
+import './SettingsPage.css';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { authAPI, userAPI } from '../api/client';
@@ -131,101 +135,91 @@ useEffect(() => {
     fetchUsers();
 }, []);
     return (
-    <div>
-        <button onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
-        <h1>Admin Panel</h1>
+    <div className="admin-page">
+        <header className="admin-header">
+            <button className="header-btn" onClick={() => navigate('/dashboard')}>← Dashboard</button>
+            <h1>⚡ Admin Panel</h1>
+            <button className="upload-btn" style={{ background: '#c0392b', borderColor: '#c0392b' }} onClick={handleCleanup}>Run Cleanup</button>
+        </header>
 
-        <button onClick={handleCleanup}>Run Cleanup Tasks</button>
+        <main className="admin-main">
 
-        <h2>Users</h2>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        {loading ? <p>Loading...</p> : (
-            <table border={1} cellPadding={8}>
-                <thead>
-                    <tr>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Storage Used</th>
-                        <th>Quota</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {users.map((u) => (
-                        <tr key={u.id}>
-                            <td>{u.username}</td>
-                            <td>{u.email}</td>
-                            <td>{u.role}</td>
-                            <td>{(u.storage_used / (1024 ** 3)).toFixed(2)} GB</td>
-                            <td>{u.storage_quota ? `${(u.storage_quota / (1024 ** 3)).toFixed(2)} GB` : 'Unlimited'}</td>
-                            <td>{u.is_active === false ? '🔴 Inactive' : '🟢 Active'}</td>
-                            <td>
-                                <button onClick={() => handleUpdateQuota(u.id, u.username, u.storage_quota)}>Quota</button>
-                                {' '}
-                                {u.is_active !== false
-                                    ? <button onClick={() => handleDeactivate(u.id, u.username)}>Deactivate</button>
-                                    : <button onClick={() => handleRestore(u.id, u.username)}>Restore</button>
-                                }
-                                {' '}
-                                <button onClick={() => handlePermanentDelete(u.id, u.username)} style={{ color: 'red' }}>Delete</button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        )}
-        <div>
+            {/* Users table */}
+            <div className="settings-card">
+                <p className="settings-card-title">Users ({users.length})</p>
+                {error && <p style={{ color: '#c0392b', fontSize: '0.8rem' }}>{error}</p>}
+                {loading ? (
+                    <p style={{ fontSize: '0.8rem', color: '#6b5c3e' }}>Loading...</p>
+                ) : (
+                    <div className="admin-table-wrapper">
+                        <table className="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Used</th>
+                                    <th>Quota</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {users.map((u) => (
+                                    <tr key={u.id}>
+                                        <td>{u.username}</td>
+                                        <td>{u.email}</td>
+                                        <td>{u.role}</td>
+                                        <td>{(u.storage_used / (1024 ** 3)).toFixed(2)} GB</td>
+                                        <td>{u.storage_quota ? `${(u.storage_quota / (1024 ** 3)).toFixed(2)} GB` : 'Unlimited'}</td>
+                                        <td>
+                                            <span className={`admin-status-badge ${u.is_active === false ? 'inactive' : 'active'}`}>
+                                                {u.is_active === false ? 'Inactive' : 'Active'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div className="admin-table-actions">
+                                                <button className="file-action-btn" onClick={() => handleUpdateQuota(u.id, u.username, u.storage_quota)}>Quota</button>
+                                                {u.is_active !== false
+                                                    ? <button className="file-action-btn" onClick={() => handleDeactivate(u.id, u.username)}>Deactivate</button>
+                                                    : <button className="file-action-btn" onClick={() => handleRestore(u.id, u.username)}>Restore</button>
+                                                }
+                                                <button className="file-action-btn file-action-btn-danger" onClick={() => handlePermanentDelete(u.id, u.username)}>Delete</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+
+            {/* Create user form */}
             {user?.role === 'admin' && (
-    <>
-        <h2>User Management (Admin)</h2>
-        <h3>Create New User</h3>
-        
-        <input
-            type="text"
-            placeholder="Username"
-            value={newUsername}
-            onChange={(e) => setNewUsername(e.target.value)}
-        />
-        <br />
-        <input
-            type="email"
-            placeholder="Email"
-            value={newEmail}
-            onChange={(e) => setNewEmail(e.target.value)}
-        />
-        <br />
-        <input
-            type="password"
-            placeholder="Password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-        />
-        <br />
-        <select value={newRole} onChange={(e) => setNewRole(e.target.value as 'user' | 'admin')}>
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-        </select>
-        <br />
-        {newRole === 'user' && (
-            <>
-                <input
-                    type="number"
-                    placeholder="Storage Quota (bytes)"
-                    value={newQuota}
-                    onChange={(e) => setNewQuota(e.target.value)}
-                />
-                <p>Default: 20GB (21474836480 bytes)</p>
-            </>
-        )}
-        <br />
-        <button onClick={handleRegisterUser}>Create User</button>
-    </>
-)}
-        </div>
+                <div className="settings-card">
+                    <p className="settings-card-title">Create New User</p>
+                    <div className="settings-form">
+                        <input className="sidebar-input" type="text" placeholder="Username" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} />
+                        <input className="sidebar-input" type="email" placeholder="Email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+                        <input className="sidebar-input" type="password" placeholder="Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                        <select className="settings-select" value={newRole} onChange={(e) => setNewRole(e.target.value as 'user' | 'admin')}>
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        {newRole === 'user' && (
+                            <>
+                                <input className="sidebar-input" type="number" placeholder="Storage Quota (bytes)" value={newQuota} onChange={(e) => setNewQuota(e.target.value)} />
+                                <p style={{ fontSize: '0.72rem', color: '#6b5c3e' }}>Default: 20GB (21474836480 bytes)</p>
+                            </>
+                        )}
+                        <button className="upload-btn" onClick={handleRegisterUser}>Create User</button>
+                    </div>
+                </div>
+            )}
+
+        </main>
     </div>
-    
 );
 }
 
