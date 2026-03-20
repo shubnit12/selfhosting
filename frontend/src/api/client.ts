@@ -2,6 +2,7 @@ import axios from "axios";
 import type { LoginResponse, TwoFactorRequiredResponse } from "../types";
 
 // const API_BASE_URL = 'http://192.168.1.56:3000/api/v1';
+// export const API_BASE_URL = 'http://192.168.1.23:3000/api/v1';
 const API_BASE_URL = '/api/v1';
 
 const apiClient = axios.create({
@@ -358,4 +359,47 @@ export const publicFolderAPI = {
     },
 
 }
+export const shareAPI = {
+    async create(fileId: string, options: {
+        password?: string;
+        expires_at?: string;
+        max_downloads?: number;
+        allow_preview?: boolean;
+    }) {
+        const response = await apiClient.post('/share', {
+            file_id: fileId,
+            ...options
+        });
+        return response.data;
+    },
+    async getMyLinks(activeOnly = true) {
+        const response = await apiClient.get(`/share/my-links?active_only=${activeOnly}`);
+        return response.data;
+    },
+    async deactivate(id: string) {
+        const response = await apiClient.delete(`/share/${id}`);
+        return response.data;
+    },
+    async getInfo(token: string) {
+        const response = await apiClient.get(`/share/${token}`);
+        return response.data;
+    },
+    async verifyPassword(token: string, password: string) {
+        const response = await apiClient.post(`/share/${token}/verify-password`, { password });
+        return response.data;
+    },
+    getDownloadUrl(token: string, password?: string): string {
+        const base = `${API_BASE_URL}/share/${token}/download`;
+        return password ? `${base}?password=${encodeURIComponent(password)}` : base;
+    },
+    async update(id: string, options: {
+        expires_at?: string | null;
+        max_downloads?: number | null;
+        is_active?: boolean;
+        password?: string;
+    }) {
+        const response = await apiClient.put(`/share/${id}`, options);
+        return response.data;
+    }
+};
 export default apiClient;
