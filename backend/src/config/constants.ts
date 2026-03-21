@@ -15,6 +15,10 @@ export const BACKUP_RETENTION_DAYS = 7;
 
 export const DEFAULT_USER_QUOTA = 20 * 1024 * 1024 * 1024; // 20GB in bytes
 
+export const ASSETS_PATH = `${STORAGE_PATH}/assets`;
+export const ASSET_API_KEY = process.env.ASSET_API_KEY || '';
+export const ASSET_MAX_FILE_SIZE = parseInt(process.env.ASSET_MAX_FILE_SIZE || '52428800'); // 50MB
+
 export const ALLOWED_MIME_TYPES = {
   images: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
   videos: ['video/mp4', 'video/webm', 'video/avi', 'video/mov', 'video/mkv'],
