@@ -7,7 +7,7 @@ import { folderPaths } from '../docs/swagger/folders.swagger';
 import { sharePaths } from '../docs/swagger/share.swagger';
 import { userPaths } from "../docs/swagger/users.swagger";
 import { publicFolderPaths } from '../docs/swagger/publicFolders.swagger';
-
+import { assetPaths } from '../docs/swagger/assets.swagger';
 
 const options = {
     definition: {
@@ -38,17 +38,26 @@ const options = {
                     scheme: 'bearer',
                     bearerFormat: 'JWT',
                     description: 'Enter your JWT token'
-                }
+                },
+                apiKeyAuth: {
+    type: 'apiKey',
+    in: 'header',
+    name: 'X-Api-Key',
+    description: 'API key for asset upload endpoints'
+}
             },
             schemas: schemas
         },
+        
         paths:{
             ...authPaths,
             ...filePaths,
             ...folderPaths,
             ...sharePaths,
             ...userPaths,
-            ...publicFolderPaths
+            ...publicFolderPaths,
+            ...assetPaths
+
         },
         tags: [
             {
@@ -74,7 +83,7 @@ const options = {
     {
     name: 'Public Folders',
     description: 'Publicly accessible folders (no authentication required)'
-}
+},{ name: 'Assets', description: 'Asset upload and serve endpoints for external apps (blog, portfolio)' }
             
         ]
     },
