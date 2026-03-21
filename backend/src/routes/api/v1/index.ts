@@ -5,7 +5,7 @@ import folderRoutes from './folders';
 import shareRoutes from './share';
 import userRoutes from './users';
 import publicFolderRoutes from './publicFolders';
-
+import assetRoutes from './assets';
 
 const router = Router();
 
@@ -18,7 +18,7 @@ router.use('/folders', folderRoutes);
 router.use('/share', shareRoutes);
 router.use('/users', userRoutes);
 router.use('/public/folders', publicFolderRoutes);
-
+router.use('/assets', assetRoutes);
 // router.use('/share', shareRoutes);
 
 export default router;
