@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI, publicFolderAPI } from '../api/client';
 function LoginPage() {
-    const [email, setEmail] = useState('shubnit12@gmail.com')
-    const [password, setPassword] = useState('MyPassword123')
+    const [email, setEmail] = useState('sidhumoosa5911@legend.com')
+    const [password, setPassword] = useState('Sidhu@5911')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const [show2FA, setShow2FA] = useState(false);
