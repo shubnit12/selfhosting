@@ -1,0 +1,82 @@
+name: EC2 Release Build
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers on version tags like v1.0.0
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Build Backend
+        run: |
+          cd backend
+          npm install
+          npm run build
+          cd ..
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm install
+          npm run build
+          cd ..
+
+      - name: Create deployment package
+        run: |
+          mkdir -p release/backend
+          mkdir -p release/frontend
+          mkdir -p release/deployEc2
+          
+          # Copy backend
+          cp -r backend/dist release/backend/
+          cp backend/package.json release/backend/
+          cp backend/package-lock.json release/backend/
+          
+          # Copy frontend
+          cp -r frontend/dist release/frontend/
+          
+          # Copy EC2 deployment scripts
+          cp -r deployEc2/* release/deployEc2/
+          chmod +x release/deployEc2/*.sh
+          
+          # Copy root files
+          cp README.md release/
+          
+          # Create archive
+          cd release
+          tar -czf ../selfhosting-ec2-${{ github.ref_name }}.tar.gz .
+          cd ..
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: selfhosting-ec2-${{ github.ref_name }}.tar.gz
+          body: |
+            ## Self-Hosted File Server - EC2 Release ${{ github.ref_name }}
+            
+            ### What's Included
+            - Backend (compiled JavaScript)
+            - Frontend (optimized static files)
+            - Deployment scripts for Ubuntu EC2
+            
+            ### Installation
+            See `deployEc2/README.md` for complete setup guide.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
