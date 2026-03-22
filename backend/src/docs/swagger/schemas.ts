@@ -18,8 +18,8 @@ export const schemas = {
         type: 'object',
         required: ['email', 'password'],
         properties: {
-            email: { type: 'string', format: 'email', example: 'shubnit12@gmail.com' },
-            password: { type: 'string', format: 'password', example: 'MyPassword123' }
+            email: { type: 'string', format: 'email', example: 'sidhumoosa5911@legend.com' },
+            password: { type: 'string', format: 'password', example: 'Sidhu@5911' }
         }
     },
 
@@ -38,8 +38,8 @@ export const schemas = {
         required: ['username', 'email', 'password'],
         properties: {
             username: { type: 'string', example: 'john' },
-            email: { type: 'string', format: 'email', example: 'john@example.com' },
-            password: { type: 'string', format: 'password', example: 'MyPassword123' },
+            email: { type: 'string', format: 'email', example: 'sidhumoosa5911@legend.com' },
+            password: { type: 'string', format: 'password', example: 'Sidhu@5911' },
             role: { type: 'string', enum: ['admin', 'user'], default: 'user' },
             storage_quota: { type: 'number', nullable: true, example: 21474836480 }
         }
