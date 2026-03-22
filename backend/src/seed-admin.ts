@@ -9,22 +9,26 @@ async function seedAdmin() {
         await sequelize.authenticate();
         logger.info('Connected to database');
 
+        const adminUsername = process.env.ADMIN_USERNAME!
+        const adminEmail = process.env.ADMIN_EMAIL!
+        const adminPassword = process.env.ADMIN_PASSWORD!
+
         // Check if admin already exists
         const existingAdmin = await User.findOne({
-            where: { email: 'shubnit12@gmail.com' }
+            where: { email: adminEmail }
         });
 
         if (existingAdmin) {
-            logger.info('Admin user already exists');
-            // process.exit(0);
+            logger.info('Admin user already exists, skipping seed');
+            return;
         }
 
-        // Create admin user
-        const hashedPassword = await hashPassword('MyPassword123');
+        // Create admin user from .env credentials
+        const hashedPassword = await hashPassword(adminPassword);
         
         const admin = await User.create({
-            username: 'shubnit',
-            email: 'shubnit12@gmail.com',
+            username: adminUsername,
+            email: adminEmail,
             password_hash: hashedPassword,
             role: 'admin',
             storage_quota: null, // Unlimited for admin
@@ -36,38 +40,24 @@ async function seedAdmin() {
             email: admin.email
         });
 
-        const admin2 = await User.create({
-            username: 'shubnit2',
-            email: 'shubnit122@gmail.com',
-            password_hash: hashedPassword,
-            role: 'admin',
-            storage_quota: null, // Unlimited for admin
-        });
-
-        logger.info('✅ Admin user created successfully', {
-            id: admin2.id,
-            username: admin2.username,
-            email: admin2.email
-        });
-
-        const user = await User.create({
-            username: 'user',
-            email: 'user@gmail.com',
-            password_hash: hashedPassword,
+        // Create one test user with 1GB storage quota
+        const testHashedPassword = await hashPassword('Sidhu@5911');
+        const testUser = await User.create({
+            username: 'SidhuMoosewala',
+            email: 'sidhumoosa5911@legend.com',
+            password_hash: testHashedPassword,
             role: 'user',
-            storage_quota: 21474836480, // Unlimited for admin
+            storage_quota: 1073741824, // 1GB in bytes
         });
 
-        logger.info('✅ Admin user created successfully', {
-            id: user.id,
-            username: user.username,
-            email: user.email
+        logger.info('✅ Test user created successfully', {
+            id: testUser.id,
+            username: testUser.username,
+            email: testUser.email
         });
 
-        // process.exit(0);
     } catch (error) {
         logger.error('Failed to seed admin user:', error);
-        // process.exit(1);
     }
 }
 
