@@ -17,14 +17,13 @@ export async function seedTestData(): Promise<void> {
         logger.info('Starting test data seeding...');
 
         // Find all users
-        const admin1 = await User.findOne({ where: { email: 'shubnit12@gmail.com' } });
-        const admin2 = await User.findOne({ where: { email: 'shubnit122@gmail.com' } });
-        const regularUser = await User.findOne({ where: { email: 'user@gmail.com' } });
+        const adminEmail = process.env.ADMIN_EMAIL!
+        const admin1 = await User.findOne({ where: { email: adminEmail } });
+        const regularUser = await User.findOne({ where: { email: 'sidhumoosa5911@legend.com' } });
 
         const users = [
-            { user: admin1, name: 'shubnit12@gmail.com' },
-            { user: admin2, name: 'shubnit122@gmail.com' },
-            { user: regularUser, name: 'user@gmail.com' }
+            { user: admin1, name: adminEmail },
+            { user: regularUser, name: 'sidhumoosa5911@legend.com' }
         ];
 
         for (const { user, name } of users) {
@@ -73,9 +72,6 @@ export async function seedTestData(): Promise<void> {
                 'notes.txt',
                 `Personal Notes for ${user.username}\n${'='.repeat(40)}\n\n- Remember to backup important files\n- Check storage usage regularly\n- Use folders to organize content\n- Share files securely with share links\n\nLast updated: ${new Date().toLocaleDateString()}`
             );
-            if (name === 'shubnit12@gmail.com') {
-                await uploadTestFile(user.id, rootFolder.id, 'smolsize.mov');
-            }
 
             // 5. Upload files to subfolder - project/work related
             await uploadTestFile(
@@ -112,11 +108,10 @@ export async function seedTestData(): Promise<void> {
             );
 
             logger.info(`✅ Test data seeded successfully for ${name}`);
-            const movieFile = name === 'shubnit12@gmail.com' ? '\n    - smolsize.mov' : '';
             logger.info(`Created structure for ${name}:
   /${rootFolder.name}
     - ${user.username}-welcome.txt
-    - notes.txt${movieFile}
+    - notes.txt
     /${rootFolder.name}/${subFolder.name}
       - project-overview.txt
       - tasks.txt
