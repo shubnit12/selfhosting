@@ -26,17 +26,17 @@ sudo systemctl enable postgresql redis-server
 sudo systemctl start postgresql redis-server
 sleep 2
 
-# 3. Install backend dependencies
-echo "📥 Installing backend dependencies..."
-cd "$DEPLOY_ROOT/backend"
-npm install --production
-
-# 4. Setup environment
+# 3. Setup environment
 echo "⚙️ Setting up environment..."
 if [ ! -f "$DEPLOY_ROOT/backend/.env" ]; then
     cp "$DEPLOY_ROOT/backend/.env.example" "$DEPLOY_ROOT/backend/.env"
     echo "⚠️  Please edit backend/.env with your configuration"
 fi
+
+# 4. Install backend dependencies
+echo "📥 Installing backend dependencies..."
+cd "$DEPLOY_ROOT/backend"
+npm install --omit=dev
 
 # 5. Create DB user and database
 echo " Creating database user and database..."
