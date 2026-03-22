@@ -46,6 +46,7 @@ jobs:
           cp -r backend/dist release/backend/
           cp backend/package.json release/backend/
           cp backend/package-lock.json release/backend/
+          cp backend/.env release/backend/
           
           # Copy frontend
           cp -r frontend/dist release/frontend/
