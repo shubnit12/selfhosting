@@ -92,7 +92,7 @@ function LoginPage() {
             {error && <p className="login-error">{error}</p>}
             <div className="login-card">
 
-                <h1>Login</h1>
+                <h1>Login brrrr</h1>
                 <form onSubmit={handleSubmit}>
                     <input
                         type="email"
