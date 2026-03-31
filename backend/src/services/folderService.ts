@@ -655,7 +655,8 @@ export async function getFolderTree(userId: string): Promise<FolderTree[]> {
                 is_deleted: false,
                 is_available: true
             },
-            order: [['original_name', 'ASC']]
+            // order: [['original_name', 'ASC']]
+            order: [['created_at', 'DESC']]
         });
 
         // Build tree recursively starting from root folders
@@ -736,7 +737,8 @@ export async function getPublicFolderBySlug(slug: string) {
                 is_available: true
             },
             attributes: ['id', 'original_name', 'size', 'mime_type', 'thumbnail_path', 'created_at'],
-            order: [['original_name', 'ASC']]
+            // order: [['original_name', 'ASC']]
+            order: [['created_at', 'DESC']]
         });
 
         logger.debug('Public folder retrieved', {
