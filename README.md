@@ -5,6 +5,7 @@
 
 A self-hosted file storage and sharing server running on an Android phone, accessible from anywhere on the internet. The system supports multiple users, large file uploads (up to 100GB), automatic thumbnail generation, shareable links, and comprehensive file management features.
 
+
 ---
 
 ## Core Requirements
