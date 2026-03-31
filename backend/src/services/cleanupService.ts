@@ -244,7 +244,9 @@ export async function cleanupUnreferencedFiles(): Promise<{
         let filesDeleted = 0;
         let storageFreed = 0;
 
-        const FILES_DIR = process.env.STORAGE_PATH || './storage/files';
+        // const FILES_DIR = process.env.STORAGE_PATH || './storage/files';
+        const STORAGE_ROOT = process.env.STORAGE_PATH || './storage';
+        const FILES_DIR = path.join(STORAGE_ROOT, 'files');
 
         if (!fs.existsSync(FILES_DIR)) {
             return { filesDeleted: 0, storageFreed: 0 };
