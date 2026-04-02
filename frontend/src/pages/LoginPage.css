@@ -9,13 +9,28 @@
     font-family: 'Courier New', Courier, monospace;
 }
 
+.link-to-my-websites-section {
+    width: 100%;
+    max-width: 800px;
+    margin-bottom: 32px;
+}
+.link-to-my-websites-cards-grid {
+    display: grid;
+    /* justify-content: space-between; */
+      justify-content: center;
+
+    /* grid-template-columns: fit-content(80px) auto fit-content(100px); */
+    grid-template-columns: auto auto;
+    /* grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); */
+    gap: 26px;
+
+}
+
 /* Public folders section */
 .public-folders-section {
     width: 100%;
     max-width: 800px;
     margin-bottom: 32px;
-    
-
 }
 
 .public-folders-section h2 {
@@ -123,7 +138,7 @@
 }
 
 /* Buttons */
-.login-btn {
+.login-btn, .my-websites-links {
     width: 100%;
     padding: 10px;
     background-color: #2d2d2d;
@@ -139,7 +154,7 @@
     box-shadow: 3px 3px 0px #6b5c3e;
 }
 
-.login-btn:hover {
+.login-btn:hover , .my-websites-links:hover {
     transform: translate(1.5px, 1.5px);
     box-shadow: 4px 4px 0px #6b5c3e;
 }
