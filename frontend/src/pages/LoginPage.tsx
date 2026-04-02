@@ -70,7 +70,22 @@ function LoginPage() {
     };
     return (
         <div className="login-page">
-
+            <div className="link-to-my-websites-section">
+                <div className="link-to-my-websites-cards-grid">
+                    <span>
+                        <button className="my-websites-links"
+                            onClick={() => { navigator.vibrate?.(50); window.open(`https://www.shubnit.com`, '_blank'); }}>
+                            My Portfolio 💼
+                        </button>
+                    </span>
+                    <span>
+                        <button className="my-websites-links"
+                            onClick={() => { navigator.vibrate?.(50); window.open(`https://blog.shubnit.com`, '_blank'); }}>
+                            My Blog 📝
+                        </button>
+                    </span>
+                </div>
+            </div>
             {publicFolders.length > 0 && (
                 <div className="public-folders-section">
                     <h2>Public Folders</h2>
