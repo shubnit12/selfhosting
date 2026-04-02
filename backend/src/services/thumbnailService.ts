@@ -23,7 +23,8 @@ if (!fs.existsSync(THUMBNAIL_DIR)) {
  */
 export async function generateImageThumbnail(
     inputPath: string,
-    outputPath: string
+    outputPath: string,
+    mimeType?: string
 ): Promise<string> {
     try {
         // await sharp(inputPath)
@@ -33,9 +34,31 @@ export async function generateImageThumbnail(
         //     })
         //     .jpeg({ quality: 80 })
         //     .toFile(outputPath);
-        const command = `ffmpeg -i "${inputPath}" -vf "scale=200:200:force_original_aspect_ratio=decrease" "${outputPath}" -y`;
-        await execAsync(command);
 
+        const isHeic = mimeType === 'image/heic' || mimeType === 'image/heif'
+        || inputPath.toLowerCase().endsWith('.heic')
+        || inputPath.toLowerCase().endsWith('.heif');
+
+        let ffmpegInput = inputPath;
+        let tempPath: string | null = null;
+
+        if(isHeic){
+            const baseName = path.basename(inputPath, path.extname(inputPath));
+        tempPath = path.join(THUMBNAIL_DIR, `${baseName}_heic_temp.jpg`);
+                try {
+            await execAsync(`heif-convert "${inputPath}" "${tempPath}"`);
+            ffmpegInput = tempPath;
+        } catch (heicError) {
+            if (tempPath && fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+            throw heicError;
+        }
+        }
+        
+        const command = `ffmpeg -i "${ffmpegInput}" -vf "scale=200:200:force_original_aspect_ratio=decrease" "${outputPath}" -y`;
+        await execAsync(command);
+            if (tempPath && fs.existsSync(tempPath)) {
+        fs.unlinkSync(tempPath);
+    }
         logger.info('Image thumbnail generated', {
             inputPath,
             outputPath
@@ -123,7 +146,7 @@ export async function generateThumbnail(
 
         // Determine file type and generate appropriate thumbnail
         if (mimeType.startsWith('image/')) {
-            return await generateImageThumbnail(filePath, thumbnailPath);
+            return await generateImageThumbnail(filePath, thumbnailPath, mimeType);
         } else if (mimeType.startsWith('video/')) {
             return await generateVideoThumbnail(filePath, thumbnailPath);
         } else {
