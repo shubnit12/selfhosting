@@ -17,7 +17,7 @@ curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
 
 # Install PostgreSQL, Redis, ffmpeg, nginx, pm2
-sudo apt install -y postgresql postgresql-contrib redis-server ffmpeg nginx
+sudo apt install -y postgresql postgresql-contrib redis-server ffmpeg nginx libheif-examples
 sudo npm install -g pm2
 
 # 2. Start and enable services
