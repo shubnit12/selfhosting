@@ -9,7 +9,7 @@ sudo apt update && sudo apt install -y unzip nginx curl gnupg2
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
 sudo npm install -g pm2
-sudo apt install -y postgresql postgresql-contrib redis-server ffmpeg
+sudo apt install -y postgresql postgresql-contrib redis-server ffmpeg libheif-examples
 ```
 
 ## 2. Create folder structure
