@@ -186,6 +186,23 @@ export async function cleanupOrphanedThumbnails(): Promise<{
             }
         }
 
+                // Cleanup any stray _heic_temp.jpg files left by HEIC conversion
+        const allFiles = fs.readdirSync(THUMBNAIL_DIR);
+        for (const file of allFiles) {
+            if (file.endsWith('_heic_temp.jpg')) {
+                try {
+                    fs.unlinkSync(path.join(THUMBNAIL_DIR, file));
+                    logger.debug('Stray HEIC temp file deleted', { file });
+                } catch (error) {
+                    logger.error('Failed to delete stray HEIC temp file', {
+                        error: (error as Error).message,
+                        file
+                    });
+                }
+            }
+        }
+
+
         logger.info('Orphaned thumbnails cleanup completed', {
             thumbnailsDeleted
         });
