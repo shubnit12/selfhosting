@@ -62,7 +62,13 @@ export const BCRYPT_CONFIG = {
 };
 
 export const CORS_CONFIG = {
-    ORIGIN: process.env.FRONTEND_URL || 'http://localhost:5173',
+     ORIGIN: [
+        process.env.FRONTEND_URL,
+        'http://shubnit.com',
+        'http://www.shubnit.com',
+        'https://shubnit.com',
+        'https://www.shubnit.com',
+    ],
     CREDENTIALS: true,
 };
 
